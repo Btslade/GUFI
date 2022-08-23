@@ -1,0 +1,39 @@
+sudo ../GUFI/build/src/gufi_trace2index /home/share/yellusers.anon.nodup.pinode /mnt/nvme0n1/yelluer1 -n 224
+
+
+
+
+
+example result:
+
+
+Scouts took total of 8.28 seconds
+Files: 13229405
+Dirs:  1622422 (360989 empty)
+Total: 14851827
+Handle Args:               0.36s
+memset(work):              0.07s
+Parse directory line:      25.99s
+dupdir:                    2079.91s
+copy_template:             4634.53s
+opendb:                    297.31s
+Zero summary struct:       0.28s
+insertdbprep:              35.27s
+startdb:                   2.48s
+fseek:                     5.81s
+Read entries:              122.03s
+    getline:               5.21s
+    memset(entry struct):  6.31s
+    Parse entry line:      50.51s
+    free(entry line):      0.61s
+    sumit:                 1.47s
+    insertdbgo:            54.18s
+stopdb:                    34.76s
+insertdbfin:               1.61s
+insertsumdb:               89.62s
+closedb:                   17.92s
+cleanup:                   0.18s
+
+Directories created:       1622423
+Files inserted:            13229405
+main completed in 36.41 seconds
