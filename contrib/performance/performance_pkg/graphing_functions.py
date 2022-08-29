@@ -2,12 +2,47 @@ import matplotlib.pyplot as plt
 import pandas
 import random
 from cycler import cycler
+
 def include_commit(df):
+    '''
+    create a commit column (USED ONLY FOR MOCK DATA)
+    
+    ...
+    
+    Inputs
+    ------
+    df : Pandas Dataframe
+        pandas data frame to add a commit column to
+        
+        
+    Returns
+    -------
+    df : Pandas Dataframe
+        data in csv loaded into a pandas dataframe
+    '''
     #f['Commit'] = [1000]
     df.insert(loc=1, column='Commit', value=1000)
     return df
 
+
 def load_and_clean(csv):
+    '''
+    read in data from provided csv. Ensure that the data being read in is in the correct format
+    
+    ...
+    
+    Inputs
+    ------
+    csv : String
+        path to csv
+        
+        
+    Returns
+    -------
+    df : Pandas Dataframe
+        data in csv loaded into a pandas dataframe
+    '''
+
     df = pandas.read_csv(csv)
     #remove s after values
     selection = df.select_dtypes('object')
@@ -43,7 +78,24 @@ def load_and_clean(csv):
         i = i + 1
     return df
 
-def plot_all(df, col):
+def plot_one(df, col):
+    '''
+    plot one column from the dataframe
+    
+    ...
+    
+    Inputs
+    ------
+    df : Pandas Dataframe
+        pandas dataframe containing the data and their columns
+    col: String
+        name of column inside of the dataframe to plot
+        
+        
+    Returns
+    -------
+    None
+    '''
     if col.name == 'Commit':
         return
     fig, ax = plt.subplots(figsize=(12,4))
@@ -65,6 +117,32 @@ def plot_all(df, col):
     plt.show()
     
 def generate_cycler(line_colors, line_types, markers):
+    '''
+    used to generate a matplotlib cycler object with the users input from the config
+    using a cycler allows for user input without overwritting the original cycler
+    
+    ...
+    
+    Inputs
+    ------
+    line_colors : list
+        list of line_colors inputed by user in config file
+    line_types : list
+        list of line styles (dashed, bold, etc) provided by user in config file
+    markers : list
+        list of point markers defined by user in the config file
+    
+    Returns
+    -------
+    custom_cycler : Cycler
+        cycler to use in plot
+    line_colors : list
+        original line_colors list with the first position popped off
+    line_types : list
+        original line_types list with the first position popped off
+    markers : list
+        original markers list with the first position popped off
+    '''
     cycler_executer = '('
     if len(line_colors) != 0:
         cycler_executer = cycler_executer + "cycler(color=[line_colors[0]])"
@@ -86,7 +164,49 @@ def generate_cycler(line_colors, line_types, markers):
         markers.pop(0)
     return custom_cycler, line_colors, line_types, markers
 
-def generate_graph(df, columns_to_plot, line_colors, graph_title, dimensions, line_types, markers, x_label, y_label, annotations, offset, text_color, default_text_color, png):
+def generate_graph(df, columns_to_plot, line_colors, 
+                   graph_title, dimensions, line_types, 
+                   markers, x_label, y_label, annotations, 
+                   offset, text_color, default_text_color, png):
+    '''
+    used to generate graph based off of all of the users inputs
+    
+    ...
+    
+    Inputs
+    ------
+    df : Pandas Dataframe
+        Dataframe containg the data to plot
+    columns_to_plot : list
+        list of columns to plot on the graph
+    line_colors : list
+        list of line colors (corresponding to columns to plot)
+    graph_title : String
+        title of the graph
+    dimensions : list
+        dimensions of the graph [width, height]
+    line_types : list
+        list of line styles (corresponding to columns to plot)
+    markers : list
+        list of markers (corresponding to columns to plot)
+    x_label : String
+        name of the x_label to be displayed on the graph
+    y_label : String
+        name of the y_label to be displayed on the graph
+    annotations : boolean
+        whether or not to include the annotated text on the graph
+    offset : int
+        offset scalar describing how far the text will be from its original point
+    text_color : list
+        list of text color (corresponding to columns to plot)
+    default_text_color : String
+        text color for all columns not accounted for in the text_color list
+    png : String
+        filename to save graph to
+    Returns
+    -------
+    None
+    '''
     fig, ax = plt.subplots(figsize=(dimensions[0], dimensions[1]), facecolor='white')
     #default_style = ax._get_lines.color_cycle
     colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
