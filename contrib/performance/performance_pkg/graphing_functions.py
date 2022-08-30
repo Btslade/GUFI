@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import pandas
 import random
 from cycler import cycler
-
+from configparser import ConfigParser, ExtendedInterpolation
+import json
 def include_commit(df):
     '''
     create a commit column (USED ONLY FOR MOCK DATA)
@@ -235,3 +236,65 @@ def generate_graph(df, columns_to_plot, line_colors,
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     fig.savefig(png, bbox_inches='tight')
+    
+def define_and_generate_graph(config_file_path):
+    '''
+    using a provided config file, will extract the contents and generate a graph
+    ...
+    
+    Inputs
+    ------
+    config_file_path : str
+        path to either a .ini file or to a directory containing .ini files
+    Returns
+    -------
+    None
+    '''
+    parser = ConfigParser(interpolation=ExtendedInterpolation())
+    parser.read(config_file_path) #user will provide this at command line
+
+    path_to_csv = parser.get('data', 'path_to_csv')
+    png = parser.get('data', 'save_to')
+
+    columns_to_plot = json.loads(parser.get('general', 'columns_to_plot'))
+    line_colors = json.loads(parser.get('general', 'line_colors'))
+    graph_title = parser.get('general', 'graph_title')
+    dimensions = json.loads(parser.get('general', 'dimension'))
+
+    line_type = json.loads(parser.get('line', 'line_type'))
+    marker = json.loads(parser.get('line', 'marker'))
+
+    x_label = parser.get('axes', 'x_label')
+    y_label = parser.get('axes', 'y_label')
+
+    annotations = parser.getboolean('annotations', 'annotations')
+    offset = parser.getint('annotations', 'offset')
+    text_color = json.loads(parser.get('annotations', 'text_color'))
+    default_text_color = parser.get('annotations', 'default_text_color')
+
+    df = load_and_clean(path_to_csv)
+    generate_graph(df, columns_to_plot, line_colors, graph_title, dimensions, line_type, marker, x_label, y_label, annotations, offset, text_color, default_text_color, png)
+    
+def plot_all(col, df, path_to_save):
+    if col.name == 'Commit':
+        return
+    fig, ax = plt.subplots(figsize=(12,6))
+    ax.plot(df['Commit'].values.tolist(), col.values.tolist(), marker='o', linestyle='dashed')
+    ax.set_title(f'{col.name}')
+    if col.dtype == 'float64':
+        ax.set_ylabel('Time(seconds)')
+    elif col.name == 'Threads run':
+        ax.set_ylabel('Threads')
+    elif col.name == 'Queries performed':
+        ax.set_ylabel('Queries')
+    elif col.name == 'Rows printed to stdout or outfiles':
+        ax.set_ylabel('Rows printed')
+    ax.set_xlabel('Commit Hash')
+    #annotate
+    offset = 2
+    for x,y in zip(df['Commit'].values.tolist(), col.values.tolist()):
+        ax.annotate(f'{y}', (x,y), color='green', textcoords ='offset points',  xytext =(offset, offset))
+    full_path = path_to_save + '/' f'{col.name}.png'
+    #print(full_path)
+    plt.savefig(full_path)
+    plt.close()
