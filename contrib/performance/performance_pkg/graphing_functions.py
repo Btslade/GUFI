@@ -19,12 +19,56 @@ def include_commit(df):
     Returns
     -------
     df : Pandas Dataframe
-        data in csv loaded into a pandas dataframe
+        data from csv loaded into a pandas dataframe
     '''
     #f['Commit'] = [1000]
     df.insert(loc=1, column='Commit', value=1000)
     return df
 
+
+def generate_fake_data(df):
+    '''
+    generates fake data to fill a csv with to mimic the information 
+    one might get when running the commands. This is used strictly for
+    testing purposes and will most likely becom obselete
+    
+    ...
+    
+    Inputs
+    ------
+    df : Pandas Dataframe
+        pandas dataframe to add fake data to
+        
+        
+    Returns
+    -------
+    df : Pandas Dataframe
+        pandas dataframe with fake data added to it
+    '''
+    new_row = []
+    for j in df.columns:
+        if df[j].dtype == 'float64':
+            rand_float = round(random.uniform(0.05, 10),2)
+            new_row.append(rand_float)
+        elif df[j].name == 'Threads run':
+            rand_int = random.randint(100, 251)
+            new_row.append(rand_int)
+        elif df[j].name == 'Queries performed':
+            rand_int = random.randint(500, 1000)
+            new_row.append(rand_int)
+        elif df[j].name == 'Rows printed to stdout or outfiles':
+            rand_int = random.randint(1500, 2100)
+            new_row.append(rand_int)
+        elif df[j].name == 'Commit':
+            rand_int = random.randint(10000, 70000)
+            new_row.append(rand_int)
+    df.loc[len(df)] = new_row
+    df['Threads run'] = df['Threads run'].astype(int)
+    df['Queries performed'] = df['Queries performed'].astype(int)
+    df['Rows printed to stdout or outfiles'] = df['Rows printed to stdout or outfiles'].astype(int)
+    df['Commit'] = df['Commit'].astype(int)
+    df['Commit'] = df['Commit'].astype(str)
+    return df
 
 def load_and_clean(csv):
     '''
@@ -52,30 +96,8 @@ def load_and_clean(csv):
         df[i] = df[i].astype(float)
     df = include_commit(df)
     i = 0
-    while i < 10: #user will provide commit number to go back to here
-        new_row = []
-        for j in df.columns:
-            if df[j].dtype == 'float64':
-                rand_float = round(random.uniform(0.05, 10),2)
-                new_row.append(rand_float)
-            elif df[j].name == 'Threads run':
-                rand_int = random.randint(100, 251)
-                new_row.append(rand_int)
-            elif df[j].name == 'Queries performed':
-                rand_int = random.randint(500, 1000)
-                new_row.append(rand_int)
-            elif df[j].name == 'Rows printed to stdout or outfiles':
-                rand_int = random.randint(1500, 2100)
-                new_row.append(rand_int)
-            elif df[j].name == 'Commit':
-                rand_int = random.randint(10000, 70000)
-                new_row.append(rand_int)
-        df.loc[len(df)] = new_row
-        df['Threads run'] = df['Threads run'].astype(int)
-        df['Queries performed'] = df['Queries performed'].astype(int)
-        df['Rows printed to stdout or outfiles'] = df['Rows printed to stdout or outfiles'].astype(int)
-        df['Commit'] = df['Commit'].astype(int)
-        df['Commit'] = df['Commit'].astype(str)
+    while i < 10: #user will provide commit number to go back to here right now its fake data
+        df = generate_fake_data(df)
         i = i + 1
     return df
 
@@ -132,6 +154,7 @@ def generate_cycler(line_colors, line_types, markers):
         list of line styles (dashed, bold, etc) provided by user in config file
     markers : list
         list of point markers defined by user in the config file
+    
     
     Returns
     -------
@@ -204,6 +227,8 @@ def generate_graph(df, columns_to_plot, line_colors,
         text color for all columns not accounted for in the text_color list
     png : String
         filename to save graph to
+    
+    
     Returns
     -------
     None
@@ -246,6 +271,8 @@ def define_and_generate_graph(config_file_path):
     ------
     config_file_path : str
         path to either a .ini file or to a directory containing .ini files
+    
+    
     Returns
     -------
     None
@@ -276,6 +303,24 @@ def define_and_generate_graph(config_file_path):
     generate_graph(df, columns_to_plot, line_colors, graph_title, dimensions, line_type, marker, x_label, y_label, annotations, offset, text_color, default_text_color, png)
     
 def plot_all(col, df, path_to_save):
+    '''
+    This function generate's a single graph from a column inside of a provided dataframe
+    ...
+    
+    Inputs
+    ------
+    col : str
+        column from the dataframe to graph
+    df : Pandas Dataframe
+        pandas dataframe containing the column to graph
+    path_to_save : str
+        path to save all the graphs
+    
+    
+    Returns
+    -------
+    None
+    '''
     if col.name == 'Commit':
         return
     fig, ax = plt.subplots(figsize=(12,6))

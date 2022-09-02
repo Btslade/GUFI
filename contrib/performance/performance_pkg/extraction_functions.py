@@ -14,6 +14,8 @@ def remove_escape_chars (s):
     ------
     s : str
         String to remove the escape charactrers from
+    
+    
     Returns
     -------
     s : str
@@ -36,6 +38,8 @@ def split_colon(command_result):
     ------
     command_result : str
         result from the cumulative time output
+    
+    
     Returns
     -------
     update_dict: Dictionary
@@ -58,6 +62,8 @@ def run_line(command):
     ------
     command : str
         command to execute 
+    
+    
     Returns
     -------
     command_result: str
@@ -80,6 +86,8 @@ def run_and_extract(file_lines):
     ------
     file_lines : str
         lines to run from the command line file
+    
+    
     Returns
     -------
     result_list: list
@@ -103,6 +111,7 @@ def open_file(file_of_commands):
     file_of_commands : str
         file containing the list of commands to run
     
+    
     Returns
     -------
     lines: str
@@ -122,6 +131,7 @@ def data_to_csv(csv_file_name, list_of_rows, keysList):
     ------
     csv_file_name : str
         file name of the csv to save the data to
+    
     
     Returns
     -------
@@ -198,6 +208,7 @@ def gufi_query(command_result):
     ------
     csv_file_name : str
         file name of the csv to save the data to
+    
     
     Returns
     -------
