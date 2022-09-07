@@ -4,6 +4,7 @@ import random
 from cycler import cycler
 from configparser import ConfigParser, ExtendedInterpolation
 import json
+import sqlite3
 def include_commit(df):
     '''
     create a commit column (USED ONLY FOR MOCK DATA)
@@ -46,20 +47,20 @@ def generate_fake_data(df):
         pandas dataframe with fake data added to it
     '''
     new_row = []
-    for j in df.columns:
-        if df[j].dtype == 'float64':
+    for column in df.columns:
+        if df[column].dtype == 'float64':
             rand_float = round(random.uniform(0.05, 10),2)
             new_row.append(rand_float)
-        elif df[j].name == 'Threads run':
+        elif df[column].name == 'Threads run':
             rand_int = random.randint(100, 251)
             new_row.append(rand_int)
-        elif df[j].name == 'Queries performed':
+        elif df[column].name == 'Queries performed':
             rand_int = random.randint(500, 1000)
             new_row.append(rand_int)
-        elif df[j].name == 'Rows printed to stdout or outfiles':
+        elif df[column].name == 'Rows printed to stdout or outfiles':
             rand_int = random.randint(1500, 2100)
             new_row.append(rand_int)
-        elif df[j].name == 'Commit':
+        elif df[column].name == 'Commit':
             rand_int = random.randint(10000, 70000)
             new_row.append(rand_int)
     df.loc[len(df)] = new_row
@@ -70,7 +71,7 @@ def generate_fake_data(df):
     df['Commit'] = df['Commit'].astype(str)
     return df
 
-def load_and_clean(csv):
+def load_and_clean(db):
     '''
     read in data from provided csv. Ensure that the data being read in is in the correct format
     
@@ -87,18 +88,17 @@ def load_and_clean(csv):
     df : Pandas Dataframe
         data in csv loaded into a pandas dataframe
     '''
-
-    df = pandas.read_csv(csv)
-    #remove s after values
+    con = sqlite3.connect(db)
+    df = pandas.read_sql('select * from t', con)
     selection = df.select_dtypes('object')
     for i in selection.columns:
-        df[i] = df[i].str.replace('s', '')
         df[i] = df[i].astype(float)
     df = include_commit(df)
     i = 0
     while i < 10: #user will provide commit number to go back to here right now its fake data
         df = generate_fake_data(df)
         i = i + 1
+    con.close()
     return df
 
 def plot_one(df, col):

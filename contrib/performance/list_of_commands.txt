@@ -1,2 +1,1 @@
-../../build/src/gufi_query -S "SELECT * FROM SUMMARY" -E "SELECT * FROM pentries" tree/GUFI/ 
-../../build/src/gufi_query -S "SELECT * FROM SUMMARY" -E "SELECT * FROM pentries" /mnt/nvme0n1/yelluer1/Z3uDCUiAgA4\=/J_G3Rob1iDs\=/
+../../build/src/gufi_query -S "SELECT * FROM SUMMARY" -E "SELECT * FROM pentries" tree/Desktop/ 

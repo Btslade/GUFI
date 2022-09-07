@@ -3,6 +3,8 @@ from subprocess import PIPE
 import shlex
 import csv
 from pathlib import Path
+import sqlite3
+from venv import create
 
 def remove_escape_chars (s):
     '''
@@ -47,7 +49,8 @@ def split_colon(command_result):
     '''
     command_result = command_result.split(':')
     command_result[0] = command_result[0].lstrip()
-    command_result[1] = command_result[1].lstrip() 
+    command_result[1] = command_result[1].lstrip()
+    command_result[1] = command_result[1].replace('s', '') 
     update_dict={command_result[0]:command_result[1]}
     
     return update_dict
@@ -176,13 +179,8 @@ def clean_gufi_trace2index(command_result):
         main = main + 's'
 
         update_dict = {'Main':main}
-    
-    
-    #remove unnecessary strings
-    
     return update_dict
     
-    #print(res)
 def gufi_trace2index(command_result):
     command_result = command_result.split('\n')
     command_dictionary = {}
@@ -220,6 +218,48 @@ def gufi_query(command_result):
         if i == '': #there are some blank values extracted, this skips them
             continue
         command_dictionary.update(split_colon(i))
-    keysList = [key for key in command_dictionary]
     #check if columns in csv match total columns in data method goes here
-    data_to_csv('gufi_query.csv', command_dictionary, keysList)
+    data_to_db('gufi_query1.db', command_dictionary)
+    
+    
+def data_to_db(db_file_name, dictionary_of_columns):
+    '''
+    store extracted data into an sqlite .db file
+    
+    ...
+    
+    Inputs
+    ------
+    db_file_name : str
+        what to name the database file
+    dictionary_of_rows : dictionary
+        dictionary containing column headers and column values
+    
+    
+    Returns
+    -------
+    None
+    '''
+    
+    keysList = [key for key in dictionary_of_columns]
+    
+    con = sqlite3.connect(db_file_name)
+    cur = con.cursor()
+    try:
+        cur.execute("SELECT * FROM t")
+    except(sqlite3.OperationalError):
+        create_table_str = ''
+        for key in keysList:
+            if key == keysList[-1]:
+                create_table_str = create_table_str + str(f"\'{key}\'")
+            else:
+                create_table_str = create_table_str + str(f"\'{key}\',")
+        cur.execute(f"CREATE TABLE t ({create_table_str});")
+    #https://softhints.com/python-3-convert-dictionary-to-sql-insert/
+    columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in dictionary_of_columns.keys())
+    values = ', '.join("'" + str(x).replace('/', '_') + "'" for x in dictionary_of_columns.values())
+    sql = "INSERT INTO %s ( %s ) VALUES ( %s );" % ('t', columns, values)
+    cur.execute(sql)
+    con.commit()
+    cur.close()
+    con.close()
