@@ -67,9 +67,10 @@ def generate_fake_data(df):
     df['Threads run'] = df['Threads run'].astype(int)
     df['Queries performed'] = df['Queries performed'].astype(int)
     df['Rows printed to stdout or outfiles'] = df['Rows printed to stdout or outfiles'].astype(int)
-    df['Commit'] = df['Commit'].astype(int)
-    df['Commit'] = df['Commit'].astype(str)
+    #df['Commit'] = df['Commit'].astype(int)
+    df['Commit'] = df['Commit'].astype(str).str[:6]
     return df
+
 
 def load_and_clean(db):
     '''
@@ -92,8 +93,10 @@ def load_and_clean(db):
     df = pandas.read_sql('select * from t', con)
     selection = df.select_dtypes('object')
     for i in selection.columns:
+        if i == 'Commit':
+            #df[i] = df[i].astype(str)
+            continue
         df[i] = df[i].astype(float)
-    df = include_commit(df)
     i = 0
     while i < 10: #user will provide commit number to go back to here right now its fake data
         df = generate_fake_data(df)

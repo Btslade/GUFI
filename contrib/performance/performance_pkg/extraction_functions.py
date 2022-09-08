@@ -195,6 +195,17 @@ def gufi_trace2index(command_result):
     data_to_csv('gufi_trace2index.csv', command_dictionary, keysList)
     print(command_dictionary)
 
+def add_commit():
+    command = 'git rev-parse HEAD'
+    command = shlex.split(command)
+    p = subprocess.Popen(command, stdout=PIPE)
+    command_result, _= p.communicate()
+    command_result = command_result.decode('ascii')
+    command_result = command_result.split('\n')
+    command_result = command_result[0]
+    dictionary = {'Commit':command_result}
+    return dictionary
+
 
 def gufi_query(command_result):
     '''
@@ -218,6 +229,8 @@ def gufi_query(command_result):
         if i == '': #there are some blank values extracted, this skips them
             continue
         command_dictionary.update(split_colon(i))
+        #add commit here
+        command_dictionary.update(add_commit())
     #check if columns in csv match total columns in data method goes here
     data_to_db('gufi_query1.db', command_dictionary)
     
