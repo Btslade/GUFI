@@ -27,11 +27,11 @@ def include_commit(df):
     return df
 
 
-def generate_fake_data(df):
+def generate_fake_data(df, commit_rand_int):
     '''
     generates fake data to fill a csv with to mimic the information 
     one might get when running the commands. This is used strictly for
-    testing purposes and will most likely becom obselete
+    testing purposes and will most likely becom obselete.
     
     ...
     
@@ -39,13 +39,17 @@ def generate_fake_data(df):
     ------
     df : Pandas Dataframe
         pandas dataframe to add fake data to
-        
+    entries_per_commit : int
+        How many entires to have per commit (testing error bars)
+
         
     Returns
     -------
     df : Pandas Dataframe
         pandas dataframe with fake data added to it
     '''
+    
+    #adding commit 
     new_row = []
     for column in df.columns:
         if df[column].dtype == 'float64':
@@ -61,8 +65,9 @@ def generate_fake_data(df):
             rand_int = random.randint(1500, 2100)
             new_row.append(rand_int)
         elif df[column].name == 'Commit':
-            rand_int = random.randint(10000, 70000)
-            new_row.append(rand_int)
+            new_row.append(commit_rand_int)
+    #print(len(df.columns))
+    #print(new_row)
     df.loc[len(df)] = new_row
     df['Threads run'] = df['Threads run'].astype(int)
     df['Queries performed'] = df['Queries performed'].astype(int)
@@ -99,7 +104,9 @@ def load_and_clean(db):
         df[i] = df[i].astype(float)
     i = 0
     while i < 10: #user will provide commit number to go back to here right now its fake data
-        df = generate_fake_data(df)
+        commit_rand_int = random.randint(10000, 70000)
+        for j in range(9): #for this fake data, we will have 10 entries per commit
+            df = generate_fake_data(df, commit_rand_int)
         i = i + 1
     con.close()
     return df
@@ -191,10 +198,59 @@ def generate_cycler(line_colors, line_types, markers):
         markers.pop(0)
     return custom_cycler, line_colors, line_types, markers
 
+def create_error_bars(df, col, ax, annotations, text_color, default_text_color, offset):
+    #We need to get the y values to be the last session run in a commit
+    x_final = []
+    y_final = []
+    if annotations:
+        lower_annotation = []
+        upper_annotation = []
+    low_y_error_range = []
+    upper_y_error_range = []
+    for commit in df.Commit.unique():
+
+        commit_section = (df[col]).where(df['Commit'] == commit)
+        commit_section = commit_section.dropna()
+        x = commit
+        y = commit_section.values.tolist()[len(commit_section)-1]
+        if annotations:
+            lower_annotation.append(commit_section.min())
+            upper_annotation.append(commit_section.max())
+        low_y_error_range.append(y - commit_section.min())
+        upper_y_error_range.append(commit_section.max() - y)
+        x_final.append(x)
+        y_final.append(y)
+    
+    ax.errorbar(x_final, y_final, yerr=(low_y_error_range, upper_y_error_range), capsize=10)
+    if annotations:
+        ax = add_annotations(x_final, y_final, text_color, default_text_color, ax, offset)
+        ax = add_annotations(x_final, lower_annotation, text_color, default_text_color, ax, offset)
+        ax = add_annotations(x_final, upper_annotation, text_color, default_text_color, ax, offset)
+        #ax = add_annotations(x_final, upper_y_error_range, text_color, default_text_color, ax, offset)
+        #for x, y, in zip (x_final, y_final, low_y_error_range, upper_y_error_range):
+        #    if len(text_color) == 0:
+        #        text_color.append(default_text_color)
+        #    ax.annotate(f'{y}', (x,y), color=text_color[0], textcoords ='offset points',  xytext =(offset, offset))
+            #if low_y != upper_y:
+            #    ax.annotate(f'Fastest: {low_y}', (x,low_y), color = text_color[0], textcoords='offset points', xytext=(offset, offset))
+            #    ax.annotate(f'Slowest: {upper_y}', (x,upper_y), color = text_color[0], textcoords='offset points', xytext=(offset, offset))
+        #text_color.pop(0)
+    return ax
+
+
+def add_annotations(x_vals, y_vals, text_color, default_text_color, ax, offset):
+    for x, y in zip(x_vals, y_vals): #This is a for loop for the marker and linestyle
+        if len(text_color) == 0:
+            text_color.append(default_text_color)
+        ax.annotate(f'{y}', (x,y), color=text_color[0], textcoords ='offset points',  xytext =(offset, offset))
+    text_color.pop(0)
+    return ax
+
 def generate_graph(df, columns_to_plot, line_colors, 
                    graph_title, dimensions, line_types, 
                    markers, x_label, y_label, annotations, 
-                   offset, text_color, default_text_color, png):
+                   offset, text_color, default_text_color, 
+                   png, error_bar):
     '''
     used to generate graph based off of all of the users inputs
     
@@ -230,6 +286,8 @@ def generate_graph(df, columns_to_plot, line_colors,
         text color for all columns not accounted for in the text_color list
     png : String
         filename to save graph to
+    error_bar : bool
+    
     
     
     Returns
@@ -251,15 +309,17 @@ def generate_graph(df, columns_to_plot, line_colors,
         if len(line_colors) != 0 or len(line_types) != 0 or len(markers) != 0:
             custom_cycler, line_colors, line_types, markers = generate_cycler(line_colors, line_types, markers)
             ax.set_prop_cycle(custom_cycler)
-            ax.plot(df['Commit'].values.tolist(), df[col].values.tolist())
-        if annotations == True:
-            for x, y in zip(df['Commit'].values.tolist(), df[col].values.tolist()): #This is a for loop for the marker and linestyle
-                if len(text_color) == 0:
-                    text_color.append(default_text_color)
-                ax.annotate(f'{y}', (x,y), color=text_color[0], textcoords ='offset points',  xytext =(offset, offset))
-            text_color.pop(0)
-    if len(columns_to_plot) >= 2:
-        ax.legend(columns_to_plot, bbox_to_anchor=(1,1), loc="upper left")
+            if error_bar:
+                ax = create_error_bars(df, col, ax, annotations, text_color, default_text_color, offset)
+            else:
+                ax.plot(df['Commit'].values.tolist(), df[col].values.tolist())
+                if annotations == True:
+                    for x, y in zip(df['Commit'].values.tolist(), df[col].values.tolist()): #This is a for loop for the marker and linestyle
+                        if len(text_color) == 0:
+                            text_color.append(default_text_color)
+                        ax.annotate(f'{y}', (x,y), color=text_color[0], textcoords ='offset points',  xytext =(offset, offset))
+                    text_color.pop(0)
+    ax.legend(columns_to_plot, bbox_to_anchor=(1,1), loc="upper left")
     ax.set_title(graph_title)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
@@ -302,8 +362,16 @@ def define_and_generate_graph(config_file_path):
     text_color = json.loads(parser.get('annotations', 'text_color'))
     default_text_color = parser.get('annotations', 'default_text_color')
 
+    error_bar = parser.getboolean('error_bar', 'error_bar' )
+
     df = load_and_clean(path_to_csv)
-    generate_graph(df, columns_to_plot, line_colors, graph_title, dimensions, line_type, marker, x_label, y_label, annotations, offset, text_color, default_text_color, png)
+    
+    
+    generate_graph(df, columns_to_plot, line_colors, graph_title, dimensions, line_type, marker, x_label, y_label, annotations, offset, text_color, default_text_color, png, error_bar)
+    #if error_bar:
+    #    generate_error_bar(df, columns_to_plot, line_colors, graph_title, dimensions, line_type, marker, x_label, y_label, annotations, offset, text_color, default_text_color, png)
+    #else:
+    #    generate_graph(df, columns_to_plot, line_colors, graph_title, dimensions, line_type, marker, x_label, y_label, annotations, offset, text_color, default_text_color, png)
     
 def plot_all(col, df, path_to_save):
     '''
@@ -346,3 +414,36 @@ def plot_all(col, df, path_to_save):
     #print(full_path)
     plt.savefig(full_path)
     plt.close()
+    
+def generate_error_bar(df, columns_to_plot, line_colors, 
+                       graph_title, dimensions, line_types, 
+                       markers, x_label, y_label, annotations,
+                       offset, text_color, default_text_color, png):
+    fig, ax = plt.subplots(figsize=(dimensions[0], dimensions[1]), facecolor='white')
+    #default_style = ax._get_lines.color_cycle
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    #print(colors)
+    #ax = plot_points(ax, columns_to_plot, marker, line_type, line_colors, df, annotations, text_color)
+    for col in columns_to_plot:
+        if len(line_colors) == 0:
+            line_colors.extend(colors)
+        if len(line_types) == 0:
+            line_types.append('solid')
+        if len(markers) == 0:
+            markers.append('o')
+        if len(line_colors) != 0 or len(line_types) != 0 or len(markers) != 0:
+            custom_cycler, line_colors, line_types, markers = generate_cycler(line_colors, line_types, markers)
+            ax.set_prop_cycle(custom_cycler)
+            ax.errorbar(df['Commit'].values.tolist(), df[col].values.tolist(), yerr='std')
+        if annotations == True:
+            for x, y in zip(df['Commit'].values.tolist(), df[col].values.tolist()): #This is a for loop for the marker and linestyle
+                if len(text_color) == 0:
+                    text_color.append(default_text_color)
+                ax.annotate(f'{y}', (x,y), color=text_color[0], textcoords ='offset points',  xytext =(offset, offset))
+            text_color.pop(0)
+    if len(columns_to_plot) >= 2:
+        ax.legend(columns_to_plot, bbox_to_anchor=(1,1), loc="upper left")
+    ax.set_title(graph_title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    fig.savefig(png, bbox_inches='tight')
