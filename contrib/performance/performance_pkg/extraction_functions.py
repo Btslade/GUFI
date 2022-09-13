@@ -4,7 +4,6 @@ import shlex
 import csv
 from pathlib import Path
 import sqlite3
-from venv import create
 
 def remove_escape_chars (s):
     '''
@@ -27,6 +26,144 @@ def remove_escape_chars (s):
     for escape_char in escape_chars:
         s = s.replace(escape_char, "")
     return s
+
+
+def data_to_csv(csv_file_name, list_of_rows, keysList):
+    '''
+    convert the data extracted into a csv file
+    
+    ...
+    
+    Inputs
+    ------
+    csv_file_name : str
+        file name of the csv to save the data to
+    
+    
+    Returns
+    -------
+    None
+    '''
+    path = Path(csv_file_name)
+    file_exists = path.is_file()
+    #https://pythonguides.com/python-dictionary-to-csv/
+    with open(csv_file_name, 'a') as csvfile:
+        i = csv.DictWriter(csvfile, fieldnames = keysList)
+        if not file_exists:
+            i.writeheader()
+            quick_fix = []
+            quick_fix.append(list_of_rows)
+            i.writerows(quick_fix)
+            return
+        #if keys dont match is the next step here
+        quick_fix = []
+        quick_fix.append(list_of_rows)
+        i.writerows(quick_fix)
+
+
+# https://stackoverflow.com/questions/53050969/python-capture-next-word-after-specific-string-in-a-text
+# FIRST WORD AND FIRST FLOAT WILL BE ADDED TOGETHER AS KEY PAIR AT SOMEPOINT
+def clean_gufi_trace2index(command_result):
+    #define dict
+    #get Scout value
+    update_dict = {}
+    if "Scouts took total of" in command_result:
+        scout = command_result.split("Scouts took total of ", 2)
+        scout = scout[1].split(" ")
+        scout = scout[0]
+        scout = scout + 's'
+        update_dict={'Scouts':scout}
+    
+    if "main completed in" in command_result:
+        main = command_result.split("main completed in ", 2)
+        main = main[1].split(" ")
+        main = main[0]
+        main = main + 's'
+        update_dict = {'Main':main}
+    return update_dict
+
+
+def gufi_trace2index(command_result):
+    command_result = command_result.split('\n')
+    command_dictionary = {}
+    for i in command_result:
+        if "Scouts took total of" in i or "main completed" in i:
+            command_dictionary.update(clean_gufi_trace2index(i))
+        elif i == '':
+            continue
+        else:
+            command_dictionary.update(split_colon(i))
+    keysList = [key for key in command_dictionary]
+    data_to_csv('gufi_trace2index.csv', command_dictionary, keysList)
+    print(command_dictionary)
+
+
+def data_to_db(db_file_name, dictionary_of_columns):
+    '''
+    store extracted data into an sqlite .db file
+    
+    ...
+    
+    Inputs
+    ------
+    db_file_name : str
+        what to name the database file
+    dictionary_of_rows : dictionary
+        dictionary containing column headers and column values
+    
+    
+    Returns
+    -------
+    None
+    '''
+    keysList = [key for key in dictionary_of_columns]
+    
+    con = sqlite3.connect(db_file_name)
+    cur = con.cursor()
+    try:
+        cur.execute("SELECT * FROM t")
+    except(sqlite3.OperationalError):
+        create_table_str = ''
+        for key in keysList:
+            if key == keysList[-1]:
+                create_table_str = create_table_str + str(f"\'{key}\'")
+            else:
+                create_table_str = create_table_str + str(f"\'{key}\',")
+        cur.execute(f"CREATE TABLE t ({create_table_str});")
+    #https://softhints.com/python-3-convert-dictionary-to-sql-insert/
+    columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in dictionary_of_columns.keys())
+    values = ', '.join("'" + str(x).replace('/', '_') + "'" for x in dictionary_of_columns.values())
+    sql = "INSERT INTO %s ( %s ) VALUES ( %s );" % ('t', columns, values)
+    cur.execute(sql)
+    con.commit()
+    cur.close()
+    con.close()
+
+
+def add_commit():
+    '''
+    gets the current commit the user is on and appends to the commit column
+    
+    ...
+    
+    Inputs
+    ------
+    None
+    
+    Returns
+    -------
+    commit_dictionary : dictionary
+        contains string literal 'Commit' and the result of 'git rev-parse'
+    '''
+    command = 'git rev-parse HEAD'
+    command = shlex.split(command)
+    p = subprocess.Popen(command, stdout=PIPE)
+    command_result, _= p.communicate()
+    command_result = command_result.decode('ascii')
+    command_result = command_result.split('\n')
+    command_result = command_result[0]
+    commit_dictionary = {'Commit':command_result}
+    return commit_dictionary
 
 
 def split_colon(command_result):
@@ -52,8 +189,36 @@ def split_colon(command_result):
     command_result[1] = command_result[1].lstrip()
     command_result[1] = command_result[1].replace('s', '') 
     update_dict={command_result[0]:command_result[1]}
-    
     return update_dict
+
+
+def gufi_query(command_result):
+    '''
+    convert the results of a gufi_query command and store them into the appropriate csv
+    
+    ...
+    
+    Inputs
+    ------
+    csv_file_name : str
+        file name of the csv to save the data to
+    
+    
+    Returns
+    -------
+    None
+    '''
+    command_result = command_result.split('\n')
+    command_dictionary = {}
+    for i in command_result:
+        if i == '': #there are some blank values extracted, this skips them
+            continue
+        command_dictionary.update(split_colon(i))
+        #add commit here
+        command_dictionary.update(add_commit())
+    #check if columns in csv match total columns in data method goes here
+    data_to_db('gufi_query1.db', command_dictionary)
+
 
 def run_line(command):
     '''
@@ -77,6 +242,7 @@ def run_line(command):
     _, command_result= p.communicate()
     command_result = command_result.decode('ascii')
     return command_result
+
 
 def run_and_extract(file_lines):
     '''
@@ -123,156 +289,3 @@ def open_file(file_of_commands):
     f = open(file_of_commands,"r")
     lines = f.readlines()
     return lines
-
-def data_to_csv(csv_file_name, list_of_rows, keysList):
-    '''
-    convert the data extracted into a csv file
-    
-    ...
-    
-    Inputs
-    ------
-    csv_file_name : str
-        file name of the csv to save the data to
-    
-    
-    Returns
-    -------
-    None
-    '''
-    path = Path(csv_file_name)
-    file_exists = path.is_file()
-    #https://pythonguides.com/python-dictionary-to-csv/
-    with open(csv_file_name, 'a') as csvfile:
-        i = csv.DictWriter(csvfile, fieldnames = keysList)
-        if not file_exists:
-            i.writeheader()
-            quick_fix = []
-            quick_fix.append(list_of_rows)
-            i.writerows(quick_fix)
-            return
-        #if keys dont match is the next step here
-        quick_fix = []
-        quick_fix.append(list_of_rows)
-        i.writerows(quick_fix)
-    
-    
-    
-    
-# https://stackoverflow.com/questions/53050969/python-capture-next-word-after-specific-string-in-a-text
-# FIRST WORD AND FIRST FLOAT WILL BE ADDED TOGETHER AS KEY PAIR AT SOMEPOINT
-def clean_gufi_trace2index(command_result):
-    #define dict
-    #get Scout value
-    update_dict = {}
-    if "Scouts took total of" in command_result:
-        scout = command_result.split("Scouts took total of ", 2)
-        scout = scout[1].split(" ")
-        scout = scout[0]
-        scout = scout + 's'
-        update_dict={'Scouts':scout}
-    
-    if "main completed in" in command_result:
-        main = command_result.split("main completed in ", 2)
-        main = main[1].split(" ")
-        main = main[0]
-        main = main + 's'
-
-        update_dict = {'Main':main}
-    return update_dict
-    
-def gufi_trace2index(command_result):
-    command_result = command_result.split('\n')
-    command_dictionary = {}
-    for i in command_result:
-        if "Scouts took total of" in i or "main completed" in i:
-            command_dictionary.update(clean_gufi_trace2index(i))
-        elif i == '':
-            continue
-        else:
-            command_dictionary.update(split_colon(i))
-    keysList = [key for key in command_dictionary]
-    data_to_csv('gufi_trace2index.csv', command_dictionary, keysList)
-    print(command_dictionary)
-
-def add_commit():
-    command = 'git rev-parse HEAD'
-    command = shlex.split(command)
-    p = subprocess.Popen(command, stdout=PIPE)
-    command_result, _= p.communicate()
-    command_result = command_result.decode('ascii')
-    command_result = command_result.split('\n')
-    command_result = command_result[0]
-    dictionary = {'Commit':command_result}
-    return dictionary
-
-
-def gufi_query(command_result):
-    '''
-    convert the results of a gufi_query command and store them into the appropriate csv
-    
-    ...
-    
-    Inputs
-    ------
-    csv_file_name : str
-        file name of the csv to save the data to
-    
-    
-    Returns
-    -------
-    None
-    '''
-    command_result = command_result.split('\n')
-    command_dictionary = {}
-    for i in command_result:
-        if i == '': #there are some blank values extracted, this skips them
-            continue
-        command_dictionary.update(split_colon(i))
-        #add commit here
-        command_dictionary.update(add_commit())
-    #check if columns in csv match total columns in data method goes here
-    data_to_db('gufi_query1.db', command_dictionary)
-    
-    
-def data_to_db(db_file_name, dictionary_of_columns):
-    '''
-    store extracted data into an sqlite .db file
-    
-    ...
-    
-    Inputs
-    ------
-    db_file_name : str
-        what to name the database file
-    dictionary_of_rows : dictionary
-        dictionary containing column headers and column values
-    
-    
-    Returns
-    -------
-    None
-    '''
-    
-    keysList = [key for key in dictionary_of_columns]
-    
-    con = sqlite3.connect(db_file_name)
-    cur = con.cursor()
-    try:
-        cur.execute("SELECT * FROM t")
-    except(sqlite3.OperationalError):
-        create_table_str = ''
-        for key in keysList:
-            if key == keysList[-1]:
-                create_table_str = create_table_str + str(f"\'{key}\'")
-            else:
-                create_table_str = create_table_str + str(f"\'{key}\',")
-        cur.execute(f"CREATE TABLE t ({create_table_str});")
-    #https://softhints.com/python-3-convert-dictionary-to-sql-insert/
-    columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in dictionary_of_columns.keys())
-    values = ', '.join("'" + str(x).replace('/', '_') + "'" for x in dictionary_of_columns.values())
-    sql = "INSERT INTO %s ( %s ) VALUES ( %s );" % ('t', columns, values)
-    cur.execute(sql)
-    con.commit()
-    cur.close()
-    con.close()

@@ -16,8 +16,8 @@ for i in sys.argv[1:]:
             print(f'File \'{i}\' could not be found, Continuing')
             continue
         except NotADirectoryError:
-            print(f'File \'{i}\' is not a directory or a .ini file, Continuing')
-            continue
+            print(f'File \'{i}\' is not a directory or a .ini file, Exiting')
+            exit()
         if len(configs) == 0:
             print(f'Path \'{i}\' is empty ')
             continue
