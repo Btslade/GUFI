@@ -54,7 +54,7 @@ def generate_fake_data(df, commit_rand_int):
     new_row = []
     for column in df.columns:
         if df[column].dtype == 'float64':
-            rand_float = round(random.uniform(0.05, 10),2)
+            rand_float = round(random.uniform(0.05, 0.1),2)
             new_row.append(rand_float)
         elif df[column].name == 'Threads run':
             rand_int = random.randint(100, 251)
@@ -75,6 +75,41 @@ def generate_fake_data(df, commit_rand_int):
     df['Rows printed to stdout or outfiles'] = df['Rows printed to stdout or outfiles'].astype(int)
     #df['Commit'] = df['Commit'].astype(int)
     df['Commit'] = df['Commit'].astype(str).str[:6]
+    return df
+
+
+def load_and_clean_debug(db):
+    '''
+    read in data from provided csv. Ensure that the data being read in is in the correct format
+    
+    ...
+    
+    Inputs
+    ------
+    csv : String
+        path to csv
+        
+        
+    Returns
+    -------
+    df : Pandas Dataframe
+        data in csv loaded into a pandas dataframe
+    '''
+    con = sqlite3.connect(db)
+    df = pandas.read_sql('select * from t', con)
+    selection = df.select_dtypes('object')
+    for column in selection.columns:
+        if column == 'Commit':
+            #df[i] = df[i].astype(str)
+            continue
+        df[column] = df[column].astype(float)
+    i = 0
+    while i < 10: #user will provide commit number to go back to here right now its fake data
+        commit_rand_int = random.randint(10000, 70000)
+        for j in range(9): #for this fake data, we will have 10 entries per commit
+            df = generate_fake_data(df, commit_rand_int)
+        i = i + 1
+    con.close()
     return df
 
 
@@ -384,10 +419,75 @@ def generate_graph(df, graph : go.Graph):
     ax.set_title(graph.basic_attributes.graph_title)
     ax.set_xlabel(graph.axes.x_label)
     ax.set_ylabel(graph.axes.y_label)
-    fig.savefig(graph.paths.path_to_save_to, bbox_inches='tight')
+    fig.savefig(graph.data.path_to_save_to, bbox_inches='tight')
+
+def commit_parse(commit, df, final_dataframe):
+    '''
+    parses each commit/commit range the user provides
+    
+    ...
+    
+    Inputs
+    ------
+    commit: str
+        commit or commit range provided by user
+    df : dataframe
+        dataframe containing all data in the database
+    final_dataframe
+        dataframe to add data from commit to
+        
+        
+    Returns
+    -------
+    final_dataframe
+        dataframe with data from commit added to it
+    '''
+    if '-' in commit:
+        commit_range = commit.split('-')
+        if len(commit_range) != 2:
+            print(f'{commit} is an invalid input')
+        else:
+            oldest_commit_first_row =  df[df['Commit'] == commit_range[0]].index[0]
+            newest_commit_last_row = df[df['Commit'] == commit_range[1]].index
+            newest_commit_last_row = newest_commit_last_row[len(newest_commit_last_row) - 1]
+            data = df.iloc[oldest_commit_first_row:newest_commit_last_row + 1] # CHECK IF PLUS ONE IS NEEDED
+            final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
+    else:
+        data = (df).where(df['Commit'] == commit)
+        data = data.dropna()
+        final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
+        #print(final_dataframe)
+    return final_dataframe
+
+def gather_commits(commit_list, df):
+    '''
+    gather all commits provided by user
+    
+    ...
+    
+    Inputs
+    ------
+    commit_list : list
+        list of commit ranges, or individual commits to plot
+    df : Pandas Dataframe
+        dataframe of entire database
+        
+    
+    Returns
+    -------
+    final_dataframe : Pandas Dataframe
+        dataframe containing the data relevant to the commits provided by the user
+    '''
+    final_dataframe = pandas.DataFrame()
+    for commit in commit_list:
+        final_dataframe = commit_parse(commit, df, final_dataframe)
+        
+    return final_dataframe
+        
+        #combined_df = pd.concat([combined_df, df], ignore_index=True)
 
 
-def load_and_clean(db):
+def load_and_clean(db, commit_list):
     '''
     read in data from provided csv. Ensure that the data being read in is in the correct format
     
@@ -395,9 +495,11 @@ def load_and_clean(db):
     
     Inputs
     ------
-    csv : String
-        path to csv
-        
+    db : String
+        path to database
+    commit_list : list
+        list of commits and commit ranges to plot
+    
         
     Returns
     -------
@@ -406,23 +508,18 @@ def load_and_clean(db):
     '''
     con = sqlite3.connect(db)
     df = pandas.read_sql('select * from t', con)
-    selection = df.select_dtypes('object')
-    for i in selection.columns:
-        if i == 'Commit':
+    final_dataframe = gather_commits(commit_list, df)
+    selection = final_dataframe.select_dtypes('object')
+    for column in selection.columns:
+        if column == 'Commit':
             #df[i] = df[i].astype(str)
             continue
-        df[i] = df[i].astype(float)
-    i = 0
-    while i < 10: #user will provide commit number to go back to here right now its fake data
-        commit_rand_int = random.randint(10000, 70000)
-        for j in range(9): #for this fake data, we will have 10 entries per commit
-            df = generate_fake_data(df, commit_rand_int)
-        i = i + 1
+        final_dataframe[column] = final_dataframe[column].astype(float)
     con.close()
-    return df
+    return final_dataframe
 
 
-def define_and_generate_graph(config_file_path):
+def define_graph(config_file_path):
     '''
     using a provided config file, will extract the contents and generate a graph
     ...
@@ -441,9 +538,10 @@ def define_and_generate_graph(config_file_path):
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read(config_file_path) #user will provide this at command line
 
-    #[paths]
-    graph.paths.path_to_csv = parser.get('paths', 'path_to_csv')
-    graph.paths.path_to_save_to = parser.get('paths', 'path_to_save_to')
+    #[data]
+    graph.data.path_to_csv = parser.get('data', 'path_to_csv')
+    graph.data.path_to_save_to = parser.get('data', 'path_to_save_to')
+    graph.data.commit_list = json.loads(parser.get('data', 'commit_list'))
 
     #[basic_attributes]
     graph.basic_attributes.columns_to_plot = json.loads(parser.get('basic_attributes', 'columns_to_plot'))
@@ -472,5 +570,5 @@ def define_and_generate_graph(config_file_path):
     graph.error_bar.min_color = json.loads(parser.get('error_bar', 'min_color'))
     graph.error_bar.max_color = json.loads(parser.get('error_bar', 'max_color'))
 
-    df = load_and_clean(graph.paths.path_to_csv)
+    df = load_and_clean(graph.data.path_to_csv, graph.data.commit_list)
     generate_graph(df, graph)

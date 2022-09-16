@@ -1,6 +1,7 @@
-class Paths:
+class Data:
     path_to_csv = ' '
     path_to_save_to = ' '
+    commit_list = []
 
 class Basic_Attributes:
     columns_to_plot = []
@@ -30,7 +31,7 @@ class Error_Bar:
     max_color = []
 
 class Graph:
-    paths = Paths
+    data = Data
     basic_attributes = Basic_Attributes
     line = Line
     axes = Axes

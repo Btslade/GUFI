@@ -8,8 +8,8 @@ if len(sys.argv) < 2:
 
 for i in sys.argv[1:]:
     if i[-4:] == '.ini':
-        gf.define_and_generate_graph(i)
-    else: #assume its a directory witch configs inside
+        gf.define_graph(i)
+    else: #assume its a directory with configs inside
         try:
             configs = os.listdir(i)
         except FileNotFoundError:
@@ -27,4 +27,4 @@ for i in sys.argv[1:]:
                     continue
                 else:
                     full_path = os.path.join(i, j)
-                    gf.define_and_generate_graph(full_path)
+                    gf.define_graph(full_path)
