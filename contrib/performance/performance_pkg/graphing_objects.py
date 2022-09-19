@@ -16,6 +16,8 @@ class Line:
 class Axes :
     x_label = ' '
     y_label = ' '
+    y_range = []
+    commit_hash_len = -1
 
 class Annotations:
     show_annotations = False

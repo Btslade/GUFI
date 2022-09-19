@@ -281,7 +281,8 @@ def gather_commit_information(df, col, show_error_bar, min_max_annotations):
 
 def create_error_bars(df, col, ax, 
                       annotations : go.Annotations,
-                      error_bar : go.Error_Bar):
+                      error_bar : go.Error_Bar,
+                      axes : go.Axes):
     '''
     Create error bars out of the data provided
     
@@ -305,7 +306,7 @@ def create_error_bars(df, col, ax,
     #We need to get the y values to be the last session run in a commit
     commit_information= gather_commit_information(df, col, True, error_bar.min_max_annotation)
     
-    x_final = commit_information[0]
+    x_final = set_hash_len(commit_information[0], axes.commit_hash_len)
     y_final = commit_information[1]
     low_y_error_range = commit_information[2]
     upper_y_error_range = commit_information[3]
@@ -371,6 +372,33 @@ def generate_cycler(line_colors, line_types, markers):
     return custom_cycler, line_colors, line_types, markers
 
 
+def set_hash_len(x_list, xlen):
+    '''
+    sets the length of the hash label on the x axis of the graph
+    
+    ...
+    
+    Inputs
+    ------
+    x_list : list
+        list of hashes to go through and shorten
+    x_len : int
+        how many characters long to plot the hash on the graph
+        
+    Returns
+    -------
+    x_list : list
+        list of hashes shortned to length (xlen) provided by user
+    '''
+    if xlen == -1:
+        return x_list
+    i = 0
+    for x in x_list:
+        x = x[:xlen]
+        x_list[i] = x
+        i = i+1
+    return x_list
+
 def generate_graph(df, graph : go.Graph):
     '''
     used to generate graph based off of all of the users inputs
@@ -407,10 +435,11 @@ def generate_graph(df, graph : go.Graph):
             if graph.error_bar.show_error_bar:
                 ax = create_error_bars(df, col, ax,
                                        graph.annotations,
-                                       graph.error_bar)
+                                       graph.error_bar,
+                                       graph.axes)
             else:
-                commit_information= gather_commit_information(df, col, False, False)
-                xs_to_plot = commit_information[0]
+                commit_information= gather_commit_information(df, col, show_error_bar= False, min_max_annotations = False)
+                xs_to_plot = set_hash_len(commit_information[0], graph.axes.commit_hash_len)
                 ys_to_plot = commit_information[1]
                 ax.plot(xs_to_plot, ys_to_plot)
                 if graph.annotations.show_annotations == True:
@@ -419,6 +448,10 @@ def generate_graph(df, graph : go.Graph):
     ax.set_title(graph.basic_attributes.graph_title)
     ax.set_xlabel(graph.axes.x_label)
     ax.set_ylabel(graph.axes.y_label)
+    if len(graph.axes.y_range) != 0:
+        lower_limit = graph.axes.y_range[0]
+        upper_limit = graph.axes.y_range[1]
+        ax.set_ylim(lower_limit, upper_limit)
     fig.savefig(graph.data.path_to_save_to, bbox_inches='tight')
 
 def commit_parse(commit, df, final_dataframe):
@@ -442,21 +475,20 @@ def commit_parse(commit, df, final_dataframe):
     final_dataframe
         dataframe with data from commit added to it
     '''
-    if '-' in commit:
-        commit_range = commit.split('-')
+    if '..' in commit:
+        commit_range = commit.split('..')
         if len(commit_range) != 2:
             print(f'{commit} is an invalid input')
         else:
-            oldest_commit_first_row =  df[df['Commit'] == commit_range[0]].index[0]
-            newest_commit_last_row = df[df['Commit'] == commit_range[1]].index
+            oldest_commit_first_row = df[df['Commit'].str.contains(commit_range[0], na=False)].index[0]
+            newest_commit_last_row = df[df['Commit'].str.contains(commit_range[1], na=False)].index
             newest_commit_last_row = newest_commit_last_row[len(newest_commit_last_row) - 1]
             data = df.iloc[oldest_commit_first_row:newest_commit_last_row + 1] # CHECK IF PLUS ONE IS NEEDED
             final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
     else:
-        data = (df).where(df['Commit'] == commit)
+        data = df[df['Commit'].str.contains(commit, na=False)]
         data = data.dropna()
         final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
-        #print(final_dataframe)
     return final_dataframe
 
 def gather_commits(commit_list, df):
@@ -556,6 +588,8 @@ def define_graph(config_file_path):
     #[axes]
     graph.axes.x_label = parser.get('axes', 'x_label')
     graph.axes.y_label = parser.get('axes', 'y_label')
+    graph.axes.y_range = json.loads(parser.get('axes', 'y_range'))
+    graph.axes.commit_hash_len = parser.getint('axes', 'commit_hash_len')
 
     #[annotations]
     graph.annotations.show_annotations = parser.getboolean('annotations', 'show_annotations')
