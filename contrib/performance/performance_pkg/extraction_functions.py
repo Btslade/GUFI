@@ -63,7 +63,7 @@ def data_to_csv(csv_file_name, list_of_rows, keysList):
 
 # https://stackoverflow.com/questions/53050969/python-capture-next-word-after-specific-string-in-a-text
 # FIRST WORD AND FIRST FLOAT WILL BE ADDED TOGETHER AS KEY PAIR AT SOMEPOINT
-def clean_gufi_trace2index(command_result):
+def clean_gufi_trace2index(command_result : str):
     #define dict
     #get Scout value
     update_dict = {}
@@ -83,7 +83,7 @@ def clean_gufi_trace2index(command_result):
     return update_dict
 
 
-def gufi_trace2index(command_result):
+def gufi_trace2index(command_result : str):
     command_result = command_result.split('\n')
     command_dictionary = {}
     for i in command_result:
@@ -98,7 +98,8 @@ def gufi_trace2index(command_result):
     print(command_dictionary)
 
 
-def data_to_db(db_file_name, dictionary_of_columns):
+def data_to_db(db_file_name : str, 
+               dictionary_of_columns : dict):
     '''
     store extracted data into an sqlite .db file
     
@@ -203,7 +204,7 @@ def extract_commit():
     return commit_dictionary
 
 
-def split_colon(command_result):
+def split_colon(command_result : str):
     '''
     take the data from the cumulative time debug output and split by colon 
     to get the event and its corresponding time
@@ -229,7 +230,7 @@ def split_colon(command_result):
     return update_dict
 
 
-def gufi_query(command_result):
+def gufi_query(command_result : str):
     '''
     convert the results of a gufi_query command and store them into the appropriate csv
     
@@ -258,7 +259,7 @@ def gufi_query(command_result):
     data_to_db('gufi_query1.db', command_dictionary)
 
 
-def run_line(command):
+def run_line(command : str):
     '''
     Runs the command line extracted from the command line file
     
@@ -282,7 +283,7 @@ def run_line(command):
     return command_result
 
 
-def run_and_extract(file_lines):
+def run_and_extract(file_lines : list):
     '''
     Run the command lines from the command line file and 
     store their output
@@ -291,7 +292,7 @@ def run_and_extract(file_lines):
     
     Inputs
     ------
-    file_lines : str
+    file_lines : list
         lines to run from the command line file
     
     
@@ -307,7 +308,7 @@ def run_and_extract(file_lines):
         result_list.append(result)
     return result_list
 
-def open_file(file_of_commands):
+def open_file(file_of_commands : str):
     '''
     Open the command line file and extract the contents
     

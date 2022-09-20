@@ -3,6 +3,7 @@ class Data:
         self.path_to_csv = ' '
         self.path_to_save_to = ' '
         self.commit_list = []
+        self.branch = ''
 
 class Basic_Attributes:
     def __init__(self):
