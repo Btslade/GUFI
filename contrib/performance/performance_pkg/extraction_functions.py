@@ -134,15 +134,52 @@ def data_to_db(db_file_name, dictionary_of_columns):
     columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in dictionary_of_columns.keys())
     values = ', '.join("'" + str(x).replace('/', '_') + "'" for x in dictionary_of_columns.values())
     sql = "INSERT INTO %s ( %s ) VALUES ( %s );" % ('t', columns, values)
-    cur.execute(sql)
-    con.commit()
-    cur.close()
-    con.close()
+    #cur.execute(sql)
+    try:
+        cur.execute(sql)
+    except(sqlite3.OperationalError):
+        for column in dictionary_of_columns.keys():
+            try:
+                sql_statement = f'select [{column}] from t'
+                cur.execute(sql_statement)
+            except:
+                sql_statement = f'alter table t add column {column}'
+                cur.execute(sql_statement)
+    finally:
+        con.execute(sql)
+        con.commit()
+        cur.close()
+        con.close()
 
-
-def add_commit():
+def extract_branch():
     '''
-    gets the current commit the user is on and appends to the commit column
+    gets the current branch the user is on
+    
+    ...
+    
+    Inputs
+    ------
+    None
+    
+    Returns
+    -------
+    branch_dictionary : dictionary
+        'branch' -> result of 'git rev-parse'
+    
+    '''
+    command = 'git rev-parse --abbrev-ref HEAD'
+    command = shlex.split(command)
+    p = subprocess.Popen(command, stdout=PIPE)
+    command_result, _= p.communicate()
+    command_result = command_result.decode('ascii')
+    command_result = command_result.split('\n')
+    command_result = command_result[0]
+    branch_dictionary = {'branch':command_result}
+    return branch_dictionary
+
+def extract_commit():
+    '''
+    gets the current commit the user is on
     
     ...
     
@@ -153,7 +190,7 @@ def add_commit():
     Returns
     -------
     commit_dictionary : dictionary
-        contains string literal 'Commit' and the result of 'git rev-parse'
+        'commit' -> result of 'git rev-parse'
     '''
     command = 'git rev-parse HEAD'
     command = shlex.split(command)
@@ -162,7 +199,7 @@ def add_commit():
     command_result = command_result.decode('ascii')
     command_result = command_result.split('\n')
     command_result = command_result[0]
-    commit_dictionary = {'Commit':command_result}
+    commit_dictionary = {'commit':command_result}
     return commit_dictionary
 
 
@@ -215,7 +252,8 @@ def gufi_query(command_result):
             continue
         command_dictionary.update(split_colon(i))
         #add commit here
-        command_dictionary.update(add_commit())
+        command_dictionary.update(extract_commit())
+        command_dictionary.update(extract_branch())
     #check if columns in csv match total columns in data method goes here
     data_to_db('gufi_query1.db', command_dictionary)
 

@@ -204,14 +204,11 @@ def set_hash_len(x_list, xlen):
     x_list : list
         list of hashes shortned to length (xlen) provided by user
     '''
-    if xlen == -1:
+    if xlen == 0:
         return x_list
-    i = 0
-    for x in x_list:
-        x = x[:xlen]
-        x_list[i] = x
-        i = i+1
-    return x_list
+    if xlen < 0:
+        return [x[xlen:] for x in x_list]
+    return [x[:xlen] for x in x_list]
 
 def generate_graph(df, graph : go.Graph):
     '''
@@ -384,9 +381,6 @@ def gather_commits(commit_list, df):
         final_dataframe = commit_parse(commit, df, final_dataframe)
         
     return final_dataframe
-        
-        #combined_df = pd.concat([combined_df, df], ignore_index=True)
-
 
 def load_and_clean(db, commit_list):
     '''
@@ -435,10 +429,9 @@ def define_graph(config_file_path):
     None
     '''
     
-    graph = go.Graph #Graph object in graphing_objects.py
+    graph = go.Graph() #Graph object in graphing_objects.py
     parser = ConfigParser(interpolation=ExtendedInterpolation())
     parser.read(config_file_path) #user will provide this at command line
-
     #[data]
     graph.data.path_to_csv = parser.get('data', 'path_to_csv')
     graph.data.path_to_save_to = parser.get('data', 'path_to_save_to')
