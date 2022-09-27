@@ -410,7 +410,8 @@ def gather_commits(data : go.Data,
     return final_dataframe
 
 def load_and_clean(db : str, 
-                   data : go.Data):
+                   data : go.Data,
+                   columns_to_plot : list):
     '''
     read in data from provided csv. Ensure that the data being read in is in the correct format
     
@@ -430,7 +431,10 @@ def load_and_clean(db : str,
         data in csv loaded into a pandas dataframe
     '''
     con = sqlite3.connect(db)
-    df = pandas.read_sql('select * from t', con)
+    columns = []
+    values = ', '.join("`" + str(x).replace('/', '_') + "`" for x in columns_to_plot)
+    select_statement = f'select {values}, `commit` from t'
+    df = pandas.read_sql(select_statement, con)
     final_dataframe = gather_commits(data, df)
     selection = final_dataframe.select_dtypes('object')
     for column in selection.columns:
@@ -495,5 +499,5 @@ def define_graph(config_file_path : str):
     graph.error_bar.min_color = json.loads(parser.get('error_bar', 'min_color'))
     graph.error_bar.max_color = json.loads(parser.get('error_bar', 'max_color'))
 
-    df = load_and_clean(graph.data.path_to_csv, graph.data)
+    df = load_and_clean(graph.data.path_to_csv, graph.data, graph.basic_attributes.columns_to_plot)
     generate_graph(df, graph)

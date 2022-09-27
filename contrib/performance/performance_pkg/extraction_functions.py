@@ -119,11 +119,13 @@ def data_to_db(db_file_name : str,
     '''
     keysList = [key for key in dictionary_of_columns]
     
+    #database_file = generate_third_hash(machine_hash, gufi_command_hash)    
+    
+    
     con = sqlite3.connect(db_file_name)
     cur = con.cursor()
-    try:
-        cur.execute("SELECT * FROM t")
-    except(sqlite3.OperationalError):
+    table = cur.execute("PRAGMA table_info(t);").fetchall()
+    if table == []:
         create_table_str = ''
         for key in keysList:
             if key == keysList[-1]:
@@ -230,7 +232,8 @@ def split_colon(command_result : str):
     return update_dict
 
 
-def gufi_query(command_result : str):
+def gufi_query(command_result : str, 
+               hash_to_use : str):
     '''
     convert the results of a gufi_query command and store them into the appropriate csv
     
@@ -256,7 +259,7 @@ def gufi_query(command_result : str):
         command_dictionary.update(extract_commit())
         command_dictionary.update(extract_branch())
     #check if columns in csv match total columns in data method goes here
-    data_to_db('gufi_query1.db', command_dictionary)
+    data_to_db(f'{hash_to_use}.db', command_dictionary)
 
 
 def run_line(command : str):

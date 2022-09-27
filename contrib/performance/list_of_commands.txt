@@ -1,1 +1,0 @@
-../../build/src/gufi_query -S "SELECT * FROM SUMMARY" -E "SELECT * FROM pentries" tree/Desktop/ 
