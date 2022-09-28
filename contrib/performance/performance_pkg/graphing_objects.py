@@ -1,6 +1,6 @@
 class Data:
     def __init__(self):
-        self.path_to_csv = ' '
+        self.path_to_database = ' '
         self.path_to_save_to = ' '
         self.commit_list = []
         self.branch = ''

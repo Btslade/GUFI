@@ -7,6 +7,7 @@ def parse_command_line_arguments():
     parser.add_argument("-r", "--ram", dest = "ram",  help="How much ram the cpu had", required=True)
     parser.add_argument("-m", "--machine", dest = "machine_name", help="Name of machine", required=True)
     parser.add_argument("--hash", default="md5", dest = "hash", choices=hf.Hashes.keys(), help = "Hashing method to use")
+    parser.add_argument("-n", "--notes", default="None", dest = "notes",  help = "Additional notes")
     args = parser.parse_args()
     return args
 

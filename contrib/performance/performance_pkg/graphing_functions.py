@@ -2,10 +2,9 @@ import matplotlib.pyplot as plt
 from matplotlib import axes
 import pandas
 from cycler import cycler
-from configparser import ConfigParser, ExtendedInterpolation
-import json
 import sqlite3
 from . import graphing_objects as go
+from . import config_functions as cf
 import shlex
 import subprocess
 from subprocess import PIPE
@@ -377,7 +376,7 @@ def commit_parse(commit : str,
                 final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
     else:
         clean_commit = git_rev_parse(commit)
-        if len(branch) !='-1':
+        if branch !='-1':
             data = df.loc[(df['commit'] == c) & (df['branch'] == branch)]
         else:
             data = df.loc[(df['commit'] == clean_commit)]
@@ -433,7 +432,7 @@ def load_and_clean(db : str,
     con = sqlite3.connect(db)
     columns = []
     values = ', '.join("`" + str(x).replace('/', '_') + "`" for x in columns_to_plot)
-    select_statement = f'select {values}, `commit` from t'
+    select_statement = f'select {values}, `commit`, `branch` from t'
     df = pandas.read_sql(select_statement, con)
     final_dataframe = gather_commits(data, df)
     selection = final_dataframe.select_dtypes('object')
@@ -446,7 +445,8 @@ def load_and_clean(db : str,
     return final_dataframe
 
 
-def define_graph(config_file_path : str):
+def define_graph(config_file_path : str,
+                 database_path : str):
     '''
     using a provided config file, will extract the contents and generate a graph
     ...
@@ -460,44 +460,7 @@ def define_graph(config_file_path : str):
     -------
     None
     '''
+    graph = cf.read_ini(config_file_path, database_path)
     
-    graph = go.Graph() #Graph object in graphing_objects.py
-    parser = ConfigParser(interpolation=ExtendedInterpolation())
-    parser.read(config_file_path) #user will provide this at command line
-    #[data]
-    graph.data.path_to_csv = parser.get('data', 'path_to_csv')
-    graph.data.path_to_save_to = parser.get('data', 'path_to_save_to')
-    graph.data.commit_list = json.loads(parser.get('data', 'commit_list'))
-    graph.data.branch = parser.get('data', 'branch')
-
-    #[basic_attributes]
-    graph.basic_attributes.columns_to_plot = json.loads(parser.get('basic_attributes', 'columns_to_plot'))
-    graph.basic_attributes.graph_title = parser.get('basic_attributes', 'graph_title')
-    graph.basic_attributes.dimensions = json.loads(parser.get('basic_attributes', 'dimension'))
-
-    #[line]
-    graph.line.line_colors = json.loads(parser.get('line', 'line_colors'))
-    graph.line.line_types = json.loads(parser.get('line', 'line_types'))
-    graph.line.markers = json.loads(parser.get('line', 'markers'))
-
-    #[axes]
-    graph.axes.x_label = parser.get('axes', 'x_label')
-    graph.axes.y_label = parser.get('axes', 'y_label')
-    graph.axes.y_range = json.loads(parser.get('axes', 'y_range'))
-    graph.axes.commit_hash_len = parser.getint('axes', 'commit_hash_len')
-
-    #[annotations]
-    graph.annotations.show_annotations = parser.getboolean('annotations', 'show_annotations')
-    graph.annotations.offset = parser.getint('annotations', 'offset')
-    graph.annotations.text_color = json.loads(parser.get('annotations', 'text_color'))
-    graph.annotations.default_text_color = parser.get('annotations', 'default_text_color')
-
-    #[error_bar]
-    graph.error_bar.show_error_bar = parser.getboolean('error_bar', 'show_error_bar' )
-    graph.error_bar.cap_size = parser.getint('error_bar', 'cap_size')
-    graph.error_bar.min_max_annotation = parser.getboolean('error_bar', 'min_max_annotation')
-    graph.error_bar.min_color = json.loads(parser.get('error_bar', 'min_color'))
-    graph.error_bar.max_color = json.loads(parser.get('error_bar', 'max_color'))
-
-    df = load_and_clean(graph.data.path_to_csv, graph.data, graph.basic_attributes.columns_to_plot)
+    df = load_and_clean(graph.data.path_to_database, graph.data, graph.basic_attributes.columns_to_plot)
     generate_graph(df, graph)

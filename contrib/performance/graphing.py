@@ -1,30 +1,43 @@
 
 from performance_pkg import graphing_functions as gf
-import sys
 import os
+import argparse
 
-if len(sys.argv) < 2:
-    print("Please provide a path to an ini file or a directory containing ini files")
 
-for i in sys.argv[1:]:
-    if i[-4:] == '.ini':
-        gf.define_graph(i)
-    else: #assume its a directory with configs inside
-        try:
+def parse_command_line_arguments():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('-c', "--config", dest = "config", nargs='+', help="Config File or dirctory containing ", default=[] )
+    parser.add_argument("-d", "--database", dest = "database",  help="Database to read from", required=True)
+    args = parser.parse_args()
+    return args
+
+def main():
+    args = parse_command_line_arguments()
+    if len(args.config) == 0:
+        gf.define_graph('', args.database)
+    for i in args.config:
+        if i[-4:] == '.ini' and os.path.isfile(i):
+            gf.define_graph(i, args.database)
+        elif os.path.isdir(i): 
             configs = os.listdir(i)
-        except FileNotFoundError:
-            print(f'File \'{i}\' could not be found, Continuing')
-            continue
-        except NotADirectoryError:
-            print(f'File \'{i}\' is not a directory or a .ini file, Exiting')
-            exit()
-        if len(configs) == 0:
-            print(f'Path \'{i}\' is empty ')
+            if len(configs) == 0:
+                print(f'Path \'{i}\' is empty ')
+                continue
+            else:
+                for j in configs:
+                    if j[-4:] != '.ini': #skip file if not an ini
+                        continue
+                    else:
+                        full_path = os.path.join(i, j)
+                        gf.define_graph(full_path, args.database)
+        elif os.path.isfile(i):
+            print(f"'{i}' is not an ini file, Skipping...")
             continue
         else:
-            for j in configs:
-                if j[-4:] != '.ini': #skip file if not an ini
-                    continue
-                else:
-                    full_path = os.path.join(i, j)
-                    gf.define_graph(full_path)
+            print(f"'{i}' does not exist, Skipping...")
+            continue
+    
+
+if __name__ == "__main__":
+    main()
