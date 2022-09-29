@@ -118,7 +118,6 @@ def data_to_db(db_file_name : str,
     None
     '''
     keysList = [key for key in dictionary_of_columns]
-    
     #database_file = generate_third_hash(machine_hash, gufi_command_hash)    
     
     
@@ -128,10 +127,12 @@ def data_to_db(db_file_name : str,
     if table == []:
         create_table_str = ''
         for key in keysList:
+            if key == 'commit' or key == 'branch':
+                create_table_str = create_table_str + str(f"\'{key}\' ")
             if key == keysList[-1]:
-                create_table_str = create_table_str + str(f"\'{key}\'")
+                create_table_str = create_table_str + str(f"\'{key}\' FLOAT")
             else:
-                create_table_str = create_table_str + str(f"\'{key}\',")
+                create_table_str = create_table_str + str(f"\'{key}\'FLOAT,")
         cur.execute(f"CREATE TABLE t ({create_table_str});")
     #https://softhints.com/python-3-convert-dictionary-to-sql-insert/
     columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in dictionary_of_columns.keys())
@@ -241,8 +242,10 @@ def gufi_query(command_result : str,
     
     Inputs
     ------
-    csv_file_name : str
-        file name of the csv to save the data to
+    command_result : str
+        result of the command the user ran
+    hash_to_use : str
+        hash to name databasefile
     
     
     Returns

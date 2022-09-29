@@ -392,10 +392,10 @@ def gather_commits(data : go.Data,
     
     Inputs
     ------
-    commit_list : list
-        list of commit ranges, or individual commits to plot
+    data : go.Data
+        data section extracted from the ini config file
     df : Pandas Dataframe
-        dataframe of entire database
+        dataframe containing user specifed columns
         
     
     Returns
@@ -412,7 +412,7 @@ def load_and_clean(db : str,
                    data : go.Data,
                    columns_to_plot : list):
     '''
-    read in data from provided csv. Ensure that the data being read in is in the correct format
+    read in data from provided database. Ensure that the data being read in is in the correct format
     
     ...
     
@@ -420,17 +420,17 @@ def load_and_clean(db : str,
     ------
     db : String
         path to database
-    commit_list : list
-        list of commits and commit ranges to plot
+    data : go.Data
+        data section extracted from the ini config file
+    columns_to_plot : list
+        list of columns user wants to plot
     
-        
     Returns
     -------
     df : Pandas Dataframe
-        data in csv loaded into a pandas dataframe
+        data loaded into a pandas dataframe
     '''
     con = sqlite3.connect(db)
-    columns = []
     values = ', '.join("`" + str(x).replace('/', '_') + "`" for x in columns_to_plot)
     select_statement = f'select {values}, `commit`, `branch` from t'
     df = pandas.read_sql(select_statement, con)
@@ -455,6 +455,8 @@ def define_graph(config_file_path : str,
     ------
     config_file_path : str
         path to either a .ini file or to a directory containing .ini files
+    database_path : str
+        path to database containing data to plot 
     
     Returns
     -------
