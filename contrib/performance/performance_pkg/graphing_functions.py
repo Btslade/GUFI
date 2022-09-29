@@ -3,8 +3,8 @@ from matplotlib import axes
 import pandas
 from cycler import cycler
 import sqlite3
-import graphing_objects as go
-import config_functions as cf
+from . import graphing_objects as go
+from . import config_functions as cf
 import shlex
 import subprocess
 
@@ -317,7 +317,7 @@ def git_rev_command(git_rev : str,
 def commit_parse(commit : str, 
                  df : pandas.DataFrame, 
                  final_dataframe : pandas.DataFrame, 
-                 branch : str):
+                 ):
     '''
     parses each commit/commit range the user provides
     
@@ -341,20 +341,12 @@ def commit_parse(commit : str,
     if '..' in commit:
         commit_list = git_rev_command('git rev-list', commit)
         commit_list.reverse()
-        if branch !='-1':
-            for c in commit_list:
-                data = df.loc[(df['commit'] == c) & (df['branch'] == branch)]
-                final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
-        else:
-            for c in commit_list:
-                data = df.loc[(df['commit'] == c)]
-                final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
+        for c in commit_list:
+            data = df.loc[(df['commit'] == c)]
+            final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
     else:
         clean_commit = git_rev_command('git rev-parse', commit)
-        if branch !='-1':
-            data = df.loc[(df['commit'] == clean_commit) & (df['branch'] == branch)]
-        else:
-            data = df.loc[(df['commit'] == clean_commit)]
+        data = df.loc[(df['commit'] == clean_commit)]
         final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
     return final_dataframe
 
@@ -380,7 +372,7 @@ def gather_commits(data : go.Data,
     '''
     final_dataframe = pandas.DataFrame()
     for commit in data.commit_list:
-        final_dataframe = commit_parse(commit, df, final_dataframe, data.branch)
+        final_dataframe = commit_parse(commit, df, final_dataframe)
     return final_dataframe
 
 def load_and_clean(db : str, 

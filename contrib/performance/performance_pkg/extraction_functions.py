@@ -231,17 +231,16 @@ def split_colon(command_result : str):
 def gufi_query(command_result : str, 
                hash_to_use : str):
     '''
-    convert the results of a gufi_query command and store them into the appropriate csv
+    convert the results of a gufi_query command and store them into the appropriate database
     
     ...
     
     Inputs
     ------
     command_result : str
-        result of the command the user
+        result of the gufi command the user provided
     hash_to_use : str
         hash to name databasefile
-    
     
     Returns
     -------

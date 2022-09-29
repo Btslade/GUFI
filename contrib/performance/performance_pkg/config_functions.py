@@ -13,12 +13,10 @@ def read_ini(config_file_path, database_path):
     try:
         graph.data.path_to_save_to = parser.get('data', 'path_to_save_to', fallback='graph.png')
         graph.data.commit_list = json.loads(parser.get('data', 'commit_list', fallback= '["HEAD~3..HEAD"]'))
-        graph.data.branch = parser.get('data', 'branch', fallback="-1")
     except:
         graph.data.path_to_csv = 'database.db'
         graph.data.path_to_save_to = 'graph.png'
         graph.data.commit_list = ["HEAD~3..HEAD"]
-        graph.data.branch = -1
 
     #[basic_attributes]
     try:
