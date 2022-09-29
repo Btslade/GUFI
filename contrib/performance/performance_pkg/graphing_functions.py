@@ -3,11 +3,10 @@ from matplotlib import axes
 import pandas
 from cycler import cycler
 import sqlite3
-from . import graphing_objects as go
-from . import config_functions as cf
+import graphing_objects as go
+import config_functions as cf
 import shlex
 import subprocess
-from subprocess import PIPE
 
 def add_annotations(x_vals : list, 
                     y_vals : list, 
@@ -305,7 +304,7 @@ def git_rev_command(git_rev : str,
     '''
     command = f'{git_rev} {commit_range}'
     command = shlex.split(command)
-    p = subprocess.Popen(command, stdout=PIPE)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE)
     command_result, _= p.communicate()
     command_result = command_result.decode('ascii')
     command_result = command_result.split('\n') #results in extra empty space at end of list

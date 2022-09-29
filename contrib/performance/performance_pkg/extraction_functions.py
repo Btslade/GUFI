@@ -1,5 +1,4 @@
 import subprocess
-from subprocess import PIPE
 import shlex
 import csv
 from pathlib import Path
@@ -117,7 +116,7 @@ def data_to_db(db_file_name : str,
     -------
     None
     '''
-    keysList = [key for key in dictionary_of_columns]
+    keys_list = [key for key in dictionary_of_columns]
     #database_file = generate_third_hash(machine_hash, gufi_command_hash)    
     
     
@@ -125,14 +124,10 @@ def data_to_db(db_file_name : str,
     cur = con.cursor()
     table = cur.execute("PRAGMA table_info(t);").fetchall()
     if table == []:
-        create_table_str = ''
-        for key in keysList:
-            if key == 'commit' or key == 'branch':
-                create_table_str = create_table_str + str(f"\'{key}\' ")
-            if key == keysList[-1]:
-                create_table_str = create_table_str + str(f"\'{key}\' FLOAT")
-            else:
-                create_table_str = create_table_str + str(f"\'{key}\'FLOAT,")
+        create_table_str = ' FLOAT,'.join("'" + str(x) + "'" for x in keys_list)
+        create_table_str = create_table_str.replace("'commit' FLOAT", "'commit'")
+        create_table_str = create_table_str.replace("'branch' FLOAT", "'branch'")
+        create_table_str = create_table_str.replace("'Real time (main)'", "'Real time (main)' FLOAT") 
         cur.execute(f"CREATE TABLE t ({create_table_str});")
     #https://softhints.com/python-3-convert-dictionary-to-sql-insert/
     columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in dictionary_of_columns.keys())
@@ -173,7 +168,7 @@ def extract_branch():
     '''
     command = 'git rev-parse --abbrev-ref HEAD'
     command = shlex.split(command)
-    p = subprocess.Popen(command, stdout=PIPE)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE)
     command_result, _= p.communicate()
     command_result = command_result.decode('ascii')
     command_result = command_result.split('\n')
@@ -198,7 +193,7 @@ def extract_commit():
     '''
     command = 'git rev-parse HEAD'
     command = shlex.split(command)
-    p = subprocess.Popen(command, stdout=PIPE)
+    p = subprocess.Popen(command, stdout=subprocess.PIPE)
     command_result, _= p.communicate()
     command_result = command_result.decode('ascii')
     command_result = command_result.split('\n')
@@ -243,7 +238,7 @@ def gufi_query(command_result : str,
     Inputs
     ------
     command_result : str
-        result of the command the user ran
+        result of the command the user
     hash_to_use : str
         hash to name databasefile
     
@@ -283,7 +278,7 @@ def run_line(command : str):
         results from the command being run
     '''
     command = shlex.split(command)
-    p = subprocess.Popen(command, stderr=PIPE)
+    p = subprocess.Popen(command, stderr=subprocess.PIPE)
     _, command_result= p.communicate()
     command_result = command_result.decode('ascii')
     return command_result
