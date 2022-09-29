@@ -284,59 +284,35 @@ def generate_graph(df : pandas.DataFrame,
         ax.set_ylim(lower_limit, upper_limit)
     fig.savefig(graph.data.path_to_save_to, bbox_inches='tight')
 
-def git_rev_parse(commit : str):
+def git_rev_command(git_rev : str,
+                    commit_range : str):
     '''
-    exectues git rev-parse with the user's commit as an argument. this
-    ensures that that user's input will be expanded to the full commit
-    hash
-
+    executes either git rev-list or git rev-parse based on what user provides
+    
     ...
-
+    
     Inputs
     ------
-    commit : str
-        single commit to run git rev-parse on
-
-
+    git_rev : str
+        string containing either git rev-parse or git rev-list
+    commit_range : str
+        commit or commit range to run git rev commands on
+        
     Returns
     -------
     command_result : str
         result from running the command
     '''
-    command = f'git rev-parse {commit}'
+    command = f'{git_rev} {commit_range}'
     command = shlex.split(command)
     p = subprocess.Popen(command, stdout=PIPE)
     command_result, _= p.communicate()
     command_result = command_result.decode('ascii')
     command_result = command_result.split('\n') #results in extra empty space at end of list
-    command_result = command_result[0] # Ignores empty space
-    return command_result
-
-def git_rev_list(commit_range : str):
-    '''
-    executes git_rev_list with the range of commits the user provides
-    as an argument.
-
-    ...
-
-    Inputs
-    ------
-    commit_range : str
-        commit range to run git rev-list on
-    
-
-    Returns
-    -------
-    command_result : list
-        list containing commits based on user's input
-    '''
-    command = f'git rev-list {commit_range}'
-    command = shlex.split(command)
-    p = subprocess.Popen(command, stdout=PIPE)
-    command_result, _= p.communicate()
-    command_result = command_result.decode('ascii')
-    command_result = command_result.split('\n') #results in extra empty space at end of list
-    del command_result[-1] #remove empty space at end of list
+    if git_rev == 'git rev-list':
+        del command_result[-1] #remove empty space at end of list
+    else: #git rev-parse
+        command_result = command_result[0]
     return command_result
 
 def commit_parse(commit : str, 
@@ -364,7 +340,7 @@ def commit_parse(commit : str,
         dataframe with data from commit added to it
     '''
     if '..' in commit:
-        commit_list = git_rev_list(commit)
+        commit_list = git_rev_command('git rev-list', commit)
         commit_list.reverse()
         if branch !='-1':
             for c in commit_list:
@@ -375,9 +351,9 @@ def commit_parse(commit : str,
                 data = df.loc[(df['commit'] == c)]
                 final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
     else:
-        clean_commit = git_rev_parse(commit)
+        clean_commit = git_rev_command('git rev-parse', commit)
         if branch !='-1':
-            data = df.loc[(df['commit'] == c) & (df['branch'] == branch)]
+            data = df.loc[(df['commit'] == clean_commit) & (df['branch'] == branch)]
         else:
             data = df.loc[(df['commit'] == clean_commit)]
         final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
@@ -443,7 +419,6 @@ def load_and_clean(db : str,
             pass
     con.close()
     return final_dataframe
-
 
 def define_graph(config_file_path : str,
                  database_path : str):
