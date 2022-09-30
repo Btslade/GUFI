@@ -15,9 +15,36 @@ Hashes = {
     'sha512'      : hashlib.sha512,
 }
 
+#
+
+
+def add_to_table(hash, args):
+    if args.database != None:
+        con = sqlite3.connect(f'{args.database}')
+    else:
+        con = sqlite3.connect('hash_database.db')
+    cur = con.cursor()
+    table = cur.execute("PRAGMA table_info(machine);").fetchall()
+    if table == []:
+        create_table_str = "'hash', 'cpu', 'ram', 'machine_name', 'hash_type', 'notes',  PRIMARY KEY (hash)"
+        cur.execute(f"CREATE TABLE machine ({create_table_str});")
+    # https://softhints.com/python-3-convert-dictionary-to-sql-insert/
+    
+    sql = f"INSERT INTO machine ('hash', 'cpu', 'ram', 'machine_name', 'hash_type', 'notes') VALUES ('{hash}', '{args.cpu}', '{args.ram}', '{args.machine_name}', '{args.hash}', '{args.notes}');"
+    
+    try:
+        con.execute(sql)
+    except sqlite3.IntegrityError:
+        pass
+    con.commit()
+    cur.close()
+    con.close()
 
 def add_to_machine_table(hash, args):
-    con = sqlite3.connect('hash_database.db')
+    if args.database != None:
+        con = sqlite3.connect(f'{args.database}')
+    else:
+        con = sqlite3.connect('hash_database.db')
     cur = con.cursor()
     table = cur.execute("PRAGMA table_info(machine);").fetchall()
     if table == []:
@@ -38,7 +65,10 @@ def add_to_machine_table(hash, args):
 #anonymize(column, hash=Hashes[args.hash])
 
 def add_to_gufi_command_table(hash, args):
-    con = sqlite3.connect('hash_database.db')
+    if args.database != None:
+        con = sqlite3.connect(f'{args.database}')
+    else:
+        con = sqlite3.connect('hash_database.db')
     cur = con.cursor()
     table = cur.execute("PRAGMA table_info(gufi_command);").fetchall()
     if table == []:
@@ -58,7 +88,10 @@ def add_to_gufi_command_table(hash, args):
 
 
 def add_to_full_hash_table(hash, args):
-    con = sqlite3.connect('hash_database.db')
+    if args.database != None:
+        con = sqlite3.connect(f'{args.database}')
+    else:
+        con = sqlite3.connect('hash_database.db')
     cur = con.cursor()
     table = cur.execute("PRAGMA table_info(full_hash);").fetchall()
     if table == []:

@@ -9,6 +9,8 @@ def parse_command_line_arguments():
     parser.add_argument("-t", "--tree", dest = "tree",  help="What tree you are running on", required= True)
     parser.add_argument('--hash', "--print", default='md5', dest = "hash", choices=hf.Hashes.keys(), help = "Hashing mehtods available to use")
     parser.add_argument("--notes", default="", dest = "notes",  help = "Additional notes")
+    parser.add_argument("--database", dest='database', help = "Specify database to write to other than the default")
+
     args = parser.parse_args()
     return args
 

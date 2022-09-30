@@ -7,6 +7,7 @@ from . import graphing_objects as go
 from . import config_functions as cf
 import shlex
 import subprocess
+from . import extraction_functions as ef
 
 def add_annotations(x_vals : list, 
                     y_vals : list, 
@@ -287,7 +288,7 @@ def generate_graph(df : pandas.DataFrame,
         ax.set_ylim(lower_limit, upper_limit)
     fig.savefig(graph.data.path_to_save_to, bbox_inches='tight')
 
-def git_rev_command(git_rev : str,
+def get_commit_range(git_rev : str,
                     commit_range : str):
     '''
     executes either git rev-list or git rev-parse based on what user provides
@@ -307,11 +308,7 @@ def git_rev_command(git_rev : str,
         result from running the command
     '''
     command = f'{git_rev} {commit_range}'
-    command = shlex.split(command)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    command_result, _= p.communicate()
-    command_result = command_result.decode('ascii')
-    command_result = command_result.split('\n') #results in extra empty space at end of list
+    command_result = ef.run_get_stdout(command).split('\n')#results in extra empty space at end of list
     if git_rev == 'git rev-list':
         del command_result[-1] #remove empty space at end of list
     else: #git rev-parse
@@ -343,13 +340,13 @@ def commit_parse(commit : str,
         dataframe with data from commit added to it
     '''
     if '..' in commit:
-        commit_list = git_rev_command('git rev-list', commit)
+        commit_list = get_commit_range('git rev-list', commit)
         commit_list.reverse()
         for c in commit_list:
             data = df.loc[(df['commit'] == c)]
             final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
     else:
-        clean_commit = git_rev_command('git rev-parse', commit)
+        clean_commit = get_commit_range('git rev-parse', commit)
         data = df.loc[(df['commit'] == clean_commit)]
         final_dataframe = pandas.concat([final_dataframe,data], ignore_index = True, axis = 0)
     return final_dataframe

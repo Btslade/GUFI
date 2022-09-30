@@ -96,6 +96,11 @@ def gufi_trace2index(command_result : str):
     data_to_csv('gufi_trace2index.csv', command_dictionary, keysList)
     print(command_dictionary)
 
+def run_get_stdout(command):
+    p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    command_result, _= p.communicate()
+    command_result = command_result.decode('ascii')
+    return command_result
 
 def data_to_db(db_file_name : str, 
                dictionary_of_columns : dict):
@@ -150,58 +155,6 @@ def data_to_db(db_file_name : str,
         cur.close()
         con.close()
 
-def extract_branch():
-    '''
-    gets the current branch the user is on
-    
-    ...
-    
-    Inputs
-    ------
-    None
-    
-    Returns
-    -------
-    branch_dictionary : dictionary
-        'branch' -> result of 'git rev-parse'
-    
-    '''
-    command = 'git rev-parse --abbrev-ref HEAD'
-    command = shlex.split(command)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    command_result, _= p.communicate()
-    command_result = command_result.decode('ascii')
-    command_result = command_result.split('\n')
-    command_result = command_result[0]
-    branch_dictionary = {'branch':command_result}
-    return branch_dictionary
-
-def extract_commit():
-    '''
-    gets the current commit the user is on
-    
-    ...
-    
-    Inputs
-    ------
-    None
-    
-    Returns
-    -------
-    commit_dictionary : dictionary
-        'commit' -> result of 'git rev-parse'
-    '''
-    command = 'git rev-parse HEAD'
-    command = shlex.split(command)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE)
-    command_result, _= p.communicate()
-    command_result = command_result.decode('ascii')
-    command_result = command_result.split('\n')
-    command_result = command_result[0]
-    commit_dictionary = {'commit':command_result}
-    return commit_dictionary
-
-
 def split_colon(command_result : str):
     '''
     take the data from the cumulative time debug output and split by colon 
@@ -252,9 +205,10 @@ def gufi_query(command_result : str,
         if i == '': #there are some blank values extracted, this skips them
             continue
         command_dictionary.update(split_colon(i))
-        #add commit here
-        command_dictionary.update(extract_commit())
-        command_dictionary.update(extract_branch())
+        #get commit here
+        command_dictionary.update({'commit':run_get_stdout('git rev-parse HEAD')[:-1]})
+        #get branch
+        command_dictionary.update({'branch':run_get_stdout('git rev-parse --abbrev-ref HEAD')[:-1]})
     #check if columns in csv match total columns in data method goes here
     data_to_db(f'{hash_to_use}.db', command_dictionary)
 
