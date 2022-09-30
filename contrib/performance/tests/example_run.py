@@ -61,62 +61,32 @@
 
 
 
+import os
+import sys
 
-'''Collection of objects to help store and use information in config file'''
-class Data:
-    '''Components expected from data section of config'''
-    def __init__(self):
-        self.path_to_database = ' '
-        self.path_to_save_to = ' '
-        self.commit_list = []
+# Add performance package to system path
+root = "@CMAKE_BINARY_DIR@" # will eventually be this
+root = "/home/braeden/Desktop/work/gufi/my_fork/GUFI"
+performance_packages = os.path.join(root, "contrib/performance/performance_pkg")
+sys.path.insert(0, performance_packages)
 
-class BasicAttributes:
-    '''Components expected from basic_attributes section of config'''
-    def __init__(self):
-        self.columns_to_plot = []
-        self.graph_title = ' '
-        self.dimensions = [12, 6]
+from python_unit_tests import test_hash_functions as thf
+from performance_pkg import extraction_functions as ef
 
-class Line:
-    '''Components expected from line secion of config'''
-    def __init__(self):
-        self.line_colors = []
-        self.line_types = []
-        self.markers = []
+ef.run_get_stdout("python3 ../create_hash_database.py")
+argument_str = ''
+for i in range(0, len(thf.FULL_ARGS), 2) : argument_str += f'{thf.FULL_ARGS[i]} "{thf.FULL_ARGS[i+1]}" '
+argument_str = argument_str.split('\n')[0]
+full_hash = ef.run_get_stdout(f"python3 ../full_command_hash.py {argument_str}").rstrip()
+ef.run_get_stdout(f"python3 ../create_cumulative_times_database.py --database {full_hash}.db")
 
-class Axes:
-    '''Components expected from the axes section of config'''
-    def __init__(self):
-        self.x_label = ' '
-        self.y_label = ' '
-        self.y_range = []
-        self.commit_hash_len = -1
-
-class Annotations:
-    '''Components expected from the annotations section of config'''
-    def __init__(self):
-        self.show_annotations = False
-        self.precision_points = 2
-        self.offset = 5
-        self.text_color = []
-        self.default_text_color = 'green'
-
-class ErrorBar:
-    '''Components expected from the error_bar section of config'''
-    def __init__(self):
-        self.show_error_bar = False
-        self.cap_size = 0
-        self.min_max_annotation = False
-        self.precision_points = 2
-        self.min_color = []
-        self.max_color = []
-
-class Graph:
-    '''Object containing all components in the config file'''
-    def __init__(self):
-        self.data = Data()
-        self.basic_attributes = BasicAttributes()
-        self.line = Line()
-        self.axes = Axes()
-        self.annotations = Annotations()
-        self.error_bar = ErrorBar()
+#https://www.geeksforgeeks.org/python-convert-a-list-to-dictionary
+gufi_dict = {thf.GUFI_ARGS[i]: thf.GUFI_ARGS[i+1] for i in range(0, len(thf.GUFI_ARGS), 2)}
+extraction_str = f'../../../build/src/{gufi_dict["--gufi"]} ' +\
+                 f'-S "{gufi_dict["-S"]}" ' +\
+                 f'-E "{gufi_dict["-E"]}" ' +\
+                 f'../{gufi_dict["--tree"]} ' +\
+                 f'2>&1 >/dev/null | python3 ../extraction.py '+\
+                 f'--combined_hash {full_hash}'
+for i in range(5): os.system(extraction_str)  # Due to the amount of redirections and pipiing, os.ststem is preferable
+ef.run_get_stdout(f"python3 ../graphing.py --database {full_hash}.db --config ../configs/db_test.ini ../configs/db_test_complex.ini")

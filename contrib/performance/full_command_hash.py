@@ -61,27 +61,25 @@
 
 
 
-# pylint: disable=import-error, invalid-name, wrong-import-position
-'''generate hash based on machine characteristics provided by user'''
+'''create full hash based on machine and gufi hash'''
 import argparse
 import sqlite3
 
 from performance_pkg import database_functions as db
 from performance_pkg import hashing_functions as hf
 
-# pylint: enable=import-error, invalid-name, wrong-import-position
-def add_to_machine_table(con: sqlite3.Connection,
-                         hash: str,
-                         args: argparse.Namespace):
+def add_to_full_hash_table(con: sqlite3.Connection,
+                           full_hash: str,
+                           args: argparse.Namespace):
     '''
-    Add data to machine table
+    Add data to full hash table
 
     Inputs
     ------
     con : sqlite3.Connectioin
-        connection to sql database containing the machine table
+        connection to sql database containing the full hash table
     hash : str
-        hash describing mahcine characteristics
+        hash generated with machine and gufi command hash as inputs
     args : argparse.Namespace
         arguments user provided at command line
 
@@ -89,13 +87,13 @@ def add_to_machine_table(con: sqlite3.Connection,
     -------
     None
     '''
-    machine_pragma = db.MACHINE_COLUMNS.replace("'", "")
+    full_hash_pragma = db.FULL_HASH_COLUMNS.replace("'", "")
     con.execute(f'''
-                 INSERT INTO {args.table} ({machine_pragma})
-                 VALUES ("{hash}", "{args.hash_type}", "{args.machine_name}",
-                 "{args.cpu}", "{args.cores_available}", "{args.ram}",
-                 "{args.storage_device}", "{args.sd_notes}", "{args.notes}");
+                 INSERT INTO {args.table} ({full_hash_pragma})
+                 VALUES ("{full_hash}", "{args.hash_type}",
+                 "{args.machine_hash}", "{args.gufi_hash}", "{args.notes}");
                  ''')
+
 
 def parse_arguments(argv: list = None):
     '''
@@ -113,55 +111,53 @@ def parse_arguments(argv: list = None):
     parsed argument list
     '''
     parser = argparse.ArgumentParser()
+    parser.add_argument("--hashdb",
+                        default=hf.HASH_DATABASE_FILE,
+                        metavar="filename",
+                        help="Database file to save this configuration to")
     parser.add_argument("--hash_type",
                         default="md5",
-                        dest="hash_type",
                         choices=hf.Hashes.keys(),
+                        metavar="hash_function",
                         help="Hashing method to use")
-    parser.add_argument("-m", "--machine", "--machine_name",
-                        dest="machine_name",
-                        help="Name of machine",
+    parser.add_argument("--override",
+                        default=None,
+                        metavar="basename",
+                        help="Database name. Overrides machine and gufi hash")
+    parser.add_argument("--machine_hash",
+                        metavar="machine_hash",
+                        help="Hash of machine configuration",
                         required=True)
-    parser.add_argument("--cpu",
-                        dest="cpu",
-                        help="cpu of machine",
+    parser.add_argument("--gufi_hash",
+                        metavar="gufi_hash",
+                        help="Hash of GUFI command",
                         required=True)
-    parser.add_argument("--cores", "--cores_available",
-                        dest="cores_available",
-                        help="How many cores in the machine",
-                        required=True)
-    parser.add_argument("-r", "--ram",
-                        dest="ram",
-                        help="How much ram available",
-                        required=True)
-    parser.add_argument("-s", "--storage", "--storage_device",
-                        dest="storage_device",
-                        help="What storage device is being used",
-                        required=True)
-    parser.add_argument("--sd_notes",
-                        dest="sd_notes",
-                        help="Additional storage_device notes")
-    parser.add_argument("-n", "--notes",
-                        default="None",
+    parser.add_argument("--notes",
+                        default="",
                         dest="notes",
                         help="Additional notes")
-    parser.add_argument("--database",
-                        dest="database",
-                        default=hf.HASH_DATABASE_FILE,
-                        help="Specify database to write to")
     parser.add_argument("--table",
                         dest="table",
-                        default=hf.MACHINE_HASH_TABLE)
+                        default=hf.FULL_HASH_TABLE)
     return parser.parse_args(argv)
 
 if __name__ == "__main__":
     args = parse_arguments()
-    db.check_if_database_exists(args.database, db.HASH_DB)
+    db.check_if_database_exists(args.hashdb, db.HASH_DB)
+    if args.override:
+        combined_hash = args.override
+    else:
+        combined_hash = hf.hash_all_values(args)
+
     try:
-        con = sqlite3.connect(args.database)
-        hash_to_use = hf.hash_machine_config(args)
-        print(f"{hash_to_use}")
-        add_to_machine_table(con, hash_to_use, args)
-        con.commit()
+        known_hashes = sqlite3.connect(args.hashdb)
+        if known_hashes.execute(f"SELECT COUNT({db.COMBINED_HASH_COL}) " +
+                                f"FROM {hf.FULL_HASH_TABLE} " +
+                                f"WHERE {db.COMBINED_HASH_COL} == '{combined_hash}';"
+                                ).fetchall()[0][0] == 0:
+            add_to_full_hash_table(known_hashes, combined_hash, args)
+            known_hashes.commit()
     finally:
-        con.close()
+        known_hashes.close()
+    # TODO find out which GUFI command was used to generate this combined hash
+    print(f'{combined_hash}')

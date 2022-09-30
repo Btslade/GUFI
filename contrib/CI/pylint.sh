@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHON_INTERPRETER@
+#!/usr/bin/env bash
 # This file is part of GUFI, which is part of MarFS, which is released
 # under the BSD license.
 #
@@ -61,62 +61,11 @@
 
 
 
+set -e
 
-'''Collection of objects to help store and use information in config file'''
-class Data:
-    '''Components expected from data section of config'''
-    def __init__(self):
-        self.path_to_database = ' '
-        self.path_to_save_to = ' '
-        self.commit_list = []
+# apt install prerequisites
+apt install -y python3
+apt install -y python3-pip
 
-class BasicAttributes:
-    '''Components expected from basic_attributes section of config'''
-    def __init__(self):
-        self.columns_to_plot = []
-        self.graph_title = ' '
-        self.dimensions = [12, 6]
-
-class Line:
-    '''Components expected from line secion of config'''
-    def __init__(self):
-        self.line_colors = []
-        self.line_types = []
-        self.markers = []
-
-class Axes:
-    '''Components expected from the axes section of config'''
-    def __init__(self):
-        self.x_label = ' '
-        self.y_label = ' '
-        self.y_range = []
-        self.commit_hash_len = -1
-
-class Annotations:
-    '''Components expected from the annotations section of config'''
-    def __init__(self):
-        self.show_annotations = False
-        self.precision_points = 2
-        self.offset = 5
-        self.text_color = []
-        self.default_text_color = 'green'
-
-class ErrorBar:
-    '''Components expected from the error_bar section of config'''
-    def __init__(self):
-        self.show_error_bar = False
-        self.cap_size = 0
-        self.min_max_annotation = False
-        self.precision_points = 2
-        self.min_color = []
-        self.max_color = []
-
-class Graph:
-    '''Object containing all components in the config file'''
-    def __init__(self):
-        self.data = Data()
-        self.basic_attributes = BasicAttributes()
-        self.line = Line()
-        self.axes = Axes()
-        self.annotations = Annotations()
-        self.error_bar = ErrorBar()
+# install pip prerequisites
+pip3 install pylint

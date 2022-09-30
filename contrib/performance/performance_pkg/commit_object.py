@@ -61,62 +61,12 @@
 
 
 
-
-'''Collection of objects to help store and use information in config file'''
-class Data:
-    '''Components expected from data section of config'''
+class CommitInformation:
+    '''Object to contain graphing features for a specific commit'''
     def __init__(self):
-        self.path_to_database = ' '
-        self.path_to_save_to = ' '
-        self.commit_list = []
-
-class BasicAttributes:
-    '''Components expected from basic_attributes section of config'''
-    def __init__(self):
-        self.columns_to_plot = []
-        self.graph_title = ' '
-        self.dimensions = [12, 6]
-
-class Line:
-    '''Components expected from line secion of config'''
-    def __init__(self):
-        self.line_colors = []
-        self.line_types = []
-        self.markers = []
-
-class Axes:
-    '''Components expected from the axes section of config'''
-    def __init__(self):
-        self.x_label = ' '
-        self.y_label = ' '
-        self.y_range = []
-        self.commit_hash_len = -1
-
-class Annotations:
-    '''Components expected from the annotations section of config'''
-    def __init__(self):
-        self.show_annotations = False
-        self.precision_points = 2
-        self.offset = 5
-        self.text_color = []
-        self.default_text_color = 'green'
-
-class ErrorBar:
-    '''Components expected from the error_bar section of config'''
-    def __init__(self):
-        self.show_error_bar = False
-        self.cap_size = 0
-        self.min_max_annotation = False
-        self.precision_points = 2
-        self.min_color = []
-        self.max_color = []
-
-class Graph:
-    '''Object containing all components in the config file'''
-    def __init__(self):
-        self.data = Data()
-        self.basic_attributes = BasicAttributes()
-        self.line = Line()
-        self.axes = Axes()
-        self.annotations = Annotations()
-        self.error_bar = ErrorBar()
+        self.xs_to_plot = []
+        self.ys_to_plot = []
+        self.lower_error_bar_range = []
+        self.upper_error_bar_range = []
+        self.lower_annotation = []
+        self.upper_annotation = []

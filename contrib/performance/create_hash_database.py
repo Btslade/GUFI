@@ -61,62 +61,36 @@
 
 
 
+# pylint: disable=import-error, invalid-name, wrong-import-position
+'''Create database to store hashes'''
+import argparse
+import sqlite3
 
-'''Collection of objects to help store and use information in config file'''
-class Data:
-    '''Components expected from data section of config'''
-    def __init__(self):
-        self.path_to_database = ' '
-        self.path_to_save_to = ' '
-        self.commit_list = []
+from performance_pkg import database_functions as db
+from performance_pkg import hashing_functions as hf
 
-class BasicAttributes:
-    '''Components expected from basic_attributes section of config'''
-    def __init__(self):
-        self.columns_to_plot = []
-        self.graph_title = ' '
-        self.dimensions = [12, 6]
+# pylint: enable=import-error, invalid-name, wrong-import-position
+def parse_command_line_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--database",
+                        dest="database",
+                        default=hf.HASH_DATABASE_FILE,
+                        help="Specify database to write to")
+    parser.add_argument("--machine_table",
+                        dest="machine_table",
+                        default=hf.MACHINE_HASH_TABLE)
+    parser.add_argument("--gufi_table",
+                        dest="gufi_table",
+                        default=hf.GUFI_COMMAND_TABLE)
+    parser.add_argument("--full_table",
+                        dest="full_table",
+                        default=hf.FULL_HASH_TABLE)
+    return parser.parse_args()
 
-class Line:
-    '''Components expected from line secion of config'''
-    def __init__(self):
-        self.line_colors = []
-        self.line_types = []
-        self.markers = []
-
-class Axes:
-    '''Components expected from the axes section of config'''
-    def __init__(self):
-        self.x_label = ' '
-        self.y_label = ' '
-        self.y_range = []
-        self.commit_hash_len = -1
-
-class Annotations:
-    '''Components expected from the annotations section of config'''
-    def __init__(self):
-        self.show_annotations = False
-        self.precision_points = 2
-        self.offset = 5
-        self.text_color = []
-        self.default_text_color = 'green'
-
-class ErrorBar:
-    '''Components expected from the error_bar section of config'''
-    def __init__(self):
-        self.show_error_bar = False
-        self.cap_size = 0
-        self.min_max_annotation = False
-        self.precision_points = 2
-        self.min_color = []
-        self.max_color = []
-
-class Graph:
-    '''Object containing all components in the config file'''
-    def __init__(self):
-        self.data = Data()
-        self.basic_attributes = BasicAttributes()
-        self.line = Line()
-        self.axes = Axes()
-        self.annotations = Annotations()
-        self.error_bar = ErrorBar()
+if __name__ == "__main__":
+    args = parse_command_line_arguments()
+    try:
+        con = sqlite3.connect(f"{args.database}")
+        db.create_database(con, args, db.HASH_DB)
+    finally:
+        con.close()

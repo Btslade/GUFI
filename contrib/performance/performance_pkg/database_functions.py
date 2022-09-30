@@ -61,84 +61,131 @@
 
 
 
-'''Functions to assist in hashing and inserting intot ables based on hashes '''
-import hashlib
+'''Collection of functions to handle database management '''
+import argparse
+import os
+import sqlite3
+import sys
 
 
-Hashes = {
-    "md5": hashlib.md5,
-    "sha1": hashlib.sha1,
-    "sha224": hashlib.sha224,
-    "sha256": hashlib.sha256,
-    "sha384": hashlib.sha384,
-    "sha512": hashlib.sha512,
-}
+import performance_pkg.extraction_functions as ef
 
-FULL_HASH_TABLE = "full_hash"
-MACHINE_HASH_TABLE = "machine"
-GUFI_COMMAND_TABLE = "gufi_command"
-HASH_DATABASE_FILE = "performance_configurations.db"
+HASH_DB = "create_hash_database.py"
+CUMULATIVE_DB = "create_cumulative_times_database.py"
+CUMULATIVE_TABLE = "cumulative_times"
+COMBINED_HASH_COL = "combined_hash"
+MACHINE_COLUMNS = '''
+                  "hash",
+                  "hash_type",
+                  "machine_name",
+                  "cpu",
+                  "cores_available",
+                  "ram",
+                  "storage_device",
+                  "sd_notes",
+                  "notes"
+                  '''
+GUFI_COMMAND_COLUMNS = '''
+                       "hash",
+                       "hash_type",
+                       "gufi_command",
+                       "a",
+                       "n",
+                       "I",
+                       "S",
+                       "E",
+                       "J",
+                       "K",
+                       "G",
+                       "B",
+                       "tree",
+                       "notes"
+                       '''
+FULL_HASH_COLUMNS = f'''
+                     "{COMBINED_HASH_COL}",
+                     "hash_type",
+                     "machine_hash",
+                     "gufi_hash",
+                     "notes"
+                     '''
 
-
-def hash_machine_config(args):
+def check_if_database_exists(database: str,
+                             util: str):
     '''
-    generate a machine hash based on user arguments
+    Checks if a database exists. If it does not, inform the user of a
+    util to use to create one
 
     ...
 
     Inputs
     ------
-    args : argparse.Namespace
-        user arguments provided at command line
+    database : str
+        path to database
+    util : str
+        name of util user can use to create database
 
     Returns
     -------
-    hash : str
-        hashed machine configuration
+    None
     '''
-    string = f'''
-             {args.machine_name} {args.cpu} {args.cores_available}
-             {args.ram} {args.storage_device}
-              '''
-    return Hashes[args.hash_type](string.encode()).hexdigest()
+    if not os.path.isfile(database):
+        print(f"'{database}' does not exist!!!\nCreate using: {util}")
+        sys.exit()
 
-def hash_gufi_command(args):
+def create_database(con: sqlite3.Connection,
+                    args: argparse.Namespace,
+                    database: str):
     '''
-    generate a gufi command hash based on user arguments
+    Creates a database based on user arguments
 
     ...
 
     Inputs
     ------
-    args : argparse.Namespace
-        user arguments provided at command line
+    con : sqlite3.Connection
+        connections to sqlite3 database
+    args : Namespace
+        arguments provided by user at command line
+    db : str
+        string detailing what kind of db to create
 
     Returns
     -------
-    hash : str
-        hashed gufi command configuration
+    None
     '''
-    string = f'''
-              {args.gufi_command} {args.a} {args.n} {args.I} {args.S}
-              {args.E} {args.J} {args.K} {args.G} {args.B} {args.tree}
-              '''
-    return Hashes[args.hash_type](string.encode()).hexdigest()
+    if database == HASH_DB:
+        con.execute(f"CREATE TABLE {args.machine_table} ({MACHINE_COLUMNS}, PRIMARY KEY (hash));")
+        con.execute(f"CREATE TABLE {args.gufi_table} ({GUFI_COMMAND_COLUMNS}, PRIMARY KEY (hash));")
+        con.execute(f"CREATE TABLE {args.full_table} ({FULL_HASH_COLUMNS}, "
+                    f"PRIMARY KEY ({COMBINED_HASH_COL}));")
+    if database == CUMULATIVE_DB:
+        create_times_table(con, ef.GUFI_QUERY_COLUMNS, args.table)
+    con.commit()
 
-def hash_all_values(args):
+def create_times_table(con: sqlite3.Connection,
+                       columns: list,
+                       table_name: str):
     '''
-    generate a hash based on machine hashes and gufi command hashes
+    Create a table to store cumulative times gathered
 
     ...
 
     Inputs
     ------
-    args : argparse.Namespace
-        user arguments provided at command line
+    con : sqlite3.Connection
+        Connection to database to add the full hash table to
+    columns : list
+        list of columns that will make up the table
+    table_name : str
+        What to name the cumulative times table in the database
 
     Returns
     -------
-    hash : str
-        hashed machine configuration
+    None
     '''
-    string = f"{args.gufi_hash} {args.machine_hash}"
-    return Hashes[args.hash_type](string.encode()).hexdigest()
+    create_table_list = []
+    for column_name, column_type in columns:
+        sqlite_column_type = ef.TYPE_TO_SQLITE[column_type]
+        create_table_list += [f"'{column_name}' {sqlite_column_type}"]
+    create_table_str = ", ".join(create_table_list)
+    con.execute(f"CREATE TABLE {table_name} ({create_table_str});")
