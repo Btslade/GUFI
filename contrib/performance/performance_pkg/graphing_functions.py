@@ -13,7 +13,8 @@ def add_annotations(x_vals : list,
                     text_color : list,
                     default_text_color : str, 
                     ax : axes.Axes , 
-                    offset: int):
+                    offset: int,
+                    precision_points: int):
     '''
     adds annotations to the appropriate position on the graph
     
@@ -33,7 +34,8 @@ def add_annotations(x_vals : list,
         Matplotlib Axes to add annotations to
     offset : int
         offset distance from annotaion point
-        
+    precision_points : int
+        how many precision points/decimal places to print annotations
         
     Returns
     -------
@@ -43,7 +45,7 @@ def add_annotations(x_vals : list,
     for x, y in zip(x_vals, y_vals): #This is a for loop for the marker and linestyle
         if len(text_color) == 0:
             text_color.append(default_text_color)
-        ax.annotate(f'{y}', (x,y), color=text_color[0], textcoords ='offset points',  xytext =(offset, offset))
+        ax.annotate(f'{y:.{precision_points}f}', (x,y), color=text_color[0], textcoords ='offset points',  xytext =(offset, offset))
     text_color.pop(0)
     return ax
 
@@ -75,7 +77,8 @@ def set_hash_len(x_list : list,
 def gather_commit_information(df : pandas.DataFrame, 
                               col : str, 
                               show_error_bar : bool, 
-                              min_max_annotations : bool):
+                              min_max_annotations : bool,
+                              precision_points : int):
     '''
     Gather statstics of a column with all entires corresponding to a unqie commit 
     
@@ -91,7 +94,8 @@ def gather_commit_information(df : pandas.DataFrame,
         True if user plans to plot error bars
     min_max_annotations : boolean
         True if user plans to annotate the min/max annotations
-        
+    precision_points : int
+        how many precision points out to write the calculated average
     Returns
     -------
     commit_information : list
@@ -110,7 +114,7 @@ def gather_commit_information(df : pandas.DataFrame,
         commit_section = (df[col]).where(df['commit'] == commit)
         commit_section = commit_section.dropna()
         x = commit
-        y = round( sum(commit_section.values.tolist()) / len(commit_section.values.tolist()), 2)
+        y = sum(commit_section.values.tolist()) / len(commit_section.values.tolist())
         if show_error_bar:
             low_y_error_range.append(y - commit_section.min())
             upper_y_error_range.append(commit_section.max() - y)
@@ -159,7 +163,7 @@ def create_error_bars(df : pandas.DataFrame,
     ax : Axes
         Matplotlib axes with error bars placed on it
     '''
-    commit_information= gather_commit_information(df, col, True, error_bar.min_max_annotation)
+    commit_information= gather_commit_information(df, col, True, error_bar.min_max_annotation, annotations.precision_points)
     
     x_average = set_hash_len(commit_information[0], axes.commit_hash_len)
     y_average = commit_information[1]
@@ -170,10 +174,10 @@ def create_error_bars(df : pandas.DataFrame,
         
     ax.errorbar(x_average, y_average, yerr=(low_y_error_range, upper_y_error_range), capsize=error_bar.cap_size)
     if annotations.show_annotations:
-        ax = add_annotations(x_average, y_average, annotations.text_color, annotations.default_text_color, ax, annotations.offset)
+        ax = add_annotations(x_average, y_average, annotations.text_color, annotations.default_text_color, ax, annotations.offset, annotations.precision_points)
     if error_bar.min_max_annotation:
-        ax = add_annotations(x_average, lower_annotation, error_bar.min_color, annotations.default_text_color, ax, annotations.offset)
-        ax = add_annotations(x_average, upper_annotation, error_bar.max_color, annotations.default_text_color, ax, annotations.offset)
+        ax = add_annotations(x_average, lower_annotation, error_bar.min_color, annotations.default_text_color, ax, annotations.offset, error_bar.precision_points)
+        ax = add_annotations(x_average, upper_annotation, error_bar.max_color, annotations.default_text_color, ax, annotations.offset, error_bar.precision_points)
     return ax
 
 def generate_cycler(line_colors : list, 
@@ -272,7 +276,7 @@ def generate_graph(df : pandas.DataFrame,
                 ys_to_plot = commit_information[1]
                 ax.plot(xs_to_plot, ys_to_plot)
                 if graph.annotations.show_annotations == True:
-                    add_annotations(xs_to_plot, ys_to_plot, graph.annotations.text_color, graph.annotations.default_text_color, ax, graph.annotations.offset)
+                    add_annotations(xs_to_plot, ys_to_plot, graph.annotations.text_color, graph.annotations.default_text_color, ax, graph.annotations.offset, graph.annotations.precision_points)
     ax.legend(graph.basic_attributes.columns_to_plot, bbox_to_anchor=(1,1), loc="upper left")
     ax.set_title(graph.basic_attributes.graph_title)
     ax.set_xlabel(graph.axes.x_label)

@@ -26,6 +26,7 @@ class Axes :
 class Annotations:
     def __init__(self):
         self.show_annotations = False
+        self.precision_points = 2
         self.offset = 5
         self.text_color = []
         self.default_text_color = 'green'
@@ -35,6 +36,7 @@ class Error_Bar:
         self.show_error_bar = False
         self.cap_size = 0
         self.min_max_annotation = False
+        self.precision_points = 2
         self.min_color = []
         self.max_color = []
 

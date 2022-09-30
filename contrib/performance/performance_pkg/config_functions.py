@@ -13,7 +13,7 @@ def read_ini(config_file_path, database_path):
     try:
         graph.data.path_to_save_to = parser.get('data', 'path_to_save_to', fallback='graph.png')
         graph.data.commit_list = json.loads(parser.get('data', 'commit_list', fallback= '["HEAD~3..HEAD"]'))
-    except:
+    except: #If the user deletes the entire section
         graph.data.path_to_csv = 'database.db'
         graph.data.path_to_save_to = 'graph.png'
         graph.data.commit_list = ["HEAD~3..HEAD"]
@@ -53,11 +53,13 @@ def read_ini(config_file_path, database_path):
     #[annotations]
     try:
         graph.annotations.show_annotations = parser.getboolean('annotations', 'show_annotations', fallback=False)
+        graph.annotations.precision_points = parser.getint('annotations', 'precision_points', fallback=2)
         graph.annotations.offset = parser.getint('annotations', 'offset', fallback=5)
         graph.annotations.text_color = json.loads(parser.get('annotations', 'text_color', fallback='["green"]'))
         graph.annotations.default_text_color = parser.get('annotations', 'default_text_color', fallback='green')
     except:
         graph.annotations.show_annotations = False
+        graph.annotations.precision_points = 2
         graph.annotations.offset = 5
         graph.annotations.text_color = ["green"]
         graph.annotations.default_text_color = 'green'
@@ -67,12 +69,14 @@ def read_ini(config_file_path, database_path):
         graph.error_bar.show_error_bar = parser.getboolean('error_bar', 'show_error_bar', fallback=False )
         graph.error_bar.cap_size = parser.getint('error_bar', 'cap_size', fallback=10)
         graph.error_bar.min_max_annotation = parser.getboolean('error_bar', 'min_max_annotation', fallback=False)
+        graph.error_bar.precision_points = parser.getint('error_bar', 'precision_points', fallback= 2)
         graph.error_bar.min_color = json.loads(parser.get('error_bar', 'min_color', fallback='["blue"]'))
         graph.error_bar.max_color = json.loads(parser.get('error_bar', 'max_color', fallback='["red"]'))
     except:
         graph.error_bar.show_error_bar = False
         graph.error_bar.cap_size = 10
         graph.error_bar.min_max_annotation = False
+        graph.error_bar.precision_points = 2
         graph.error_bar.min_color = ["blue"]
         graph.error_bar.max_color = ["red"]
     
