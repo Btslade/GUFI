@@ -182,7 +182,7 @@ def build_where(args, table, root_uid = 0, root_gid = 0):
     # if args.ilname is not None:
 
     if args.iname is not None:
-        where += ['{}.name REGEXP \'(?i){}\'"'.format(table, args.iname)]
+        where += ['{}.name REGEXP \'(?i){}\''.format(table, args.iname)]
 
     if args.inum is not None:
         where += ['{}.inode {} {}'.format(table, inum[0], inum[1]) for inum in args.inum]
@@ -198,7 +198,8 @@ def build_where(args, table, root_uid = 0, root_gid = 0):
         where += ['{}.nlink {} {}'.format(table, links[0], links[1]) for links in args.links]
 
     if args.lname is not None:
-        where += ['{}.type == \'f\'', '{}.linkname REGEXP \'(?i){}\'"'.format(table, args.lname)]
+        where += ['{}.type == \'l\''.format(table),
+                  '{}.name REGEXP \'{}\''.format(table, args.lname)]
 
     if args.mmin is not None:
         where += ['({} - {}.mtime) / 60 {} {}'.format(now, table, mmin[0], mmin[1]) for mmin in args.mmin]
@@ -228,7 +229,7 @@ def build_where(args, table, root_uid = 0, root_gid = 0):
     # if args.regex is not None:
 
     if args.samefile is not None:
-        where += ['{}.inode == {}'.format(name, args.samefile.st_ino)]
+        where += ['{}.inode == {}'.format(table, args.samefile.st_ino)]
 
     if args.size is not None:
         where += ['{}.size {} {}'.format(table, size[0], size[1]) for size in args.size]
@@ -410,7 +411,7 @@ def build_output(args, table):
 
     path = 'path'
     if not need_aggregation(args):
-        path += '({}.name)'.format(SUMMARY)
+        path += '({0}.name, {0}.rollupscore)'.format(SUMMARY)
 
     if args.printf is not None:
         i = 0
@@ -438,6 +439,11 @@ def build_output(args, table):
 def help(parser):
     # generate list of expressions
     expr = [expr for expr in sorted(parser.parse_args([]).__dict__.keys())]
+
+    # don't show these
+    expr.remove('inmemory_name')
+    expr.remove('aggregate_name')
+
     expr = [expr[i:i+5] for i in range(0, len(expr), 5)]
 
     print('Usage: gufi_find [-P] [path...] [expression]\n' +
@@ -488,14 +494,14 @@ def build_expression_parser():
     parser.add_argument('-mmin',               metavar='n',          dest='mmin',                  type=numeric_arg, action='append',                  help='File\'s data was last modified n minutes ago.')
     parser.add_argument('-mtime',              metavar='n',          dest='mtime',                 type=numeric_arg, action='append',                  help='File\'s data was last modified n*24 hours ago.')
     parser.add_argument('-name',               metavar='pattern',    dest='name',                  type=str, action='append',                          help='Base of file name (the path with the leading directories removed) matches shell pattern pattern.')
-    parser.add_argument('-newer',              metavar='file',       dest='newer',                 type=os.stat,                                       help='File was modified more recently than file.')
+    parser.add_argument('-newer',              metavar='file',       dest='newer',                 type=os.lstat,                                      help='File was modified more recently than file.')
     # parser.add_argument('-newerXY',            metavar='reference',  dest='newerXY',               type=str,                                           help='Compares the timestamp of the current file with reference.')
     # parser.add_argument('-nouser',                                   dest='nouser',                type='store_true',                                  help='No user corresponds to file\'s numeric user ID.')
     parser.add_argument('-path',               metavar='pattern',    dest='path',                  type=str, action='append', default=[],              help='File name matches shell pattern pattern.')
     # parser.add_argument('-perm',               metavar='mode',       dest='perm',                  type=str,                                           help='File\'s  permission bits')
     parser.add_argument('-readable',                                 dest='readable',              action='store_true',                                help='Matches files which are readable.')
     # parser.add_argument('-regex',              metavar='pattern',    dest='regex',                 type=str,                                           help='File name matches regular expression pattern.')
-    parser.add_argument('-samefile',           metavar='name',       dest='samefile',              type=os.stat,                                       help='File refers to the same inode as name.')
+    parser.add_argument('-samefile',           metavar='name',       dest='samefile',              type=os.lstat,                                      help='File refers to the same inode as name.')
     parser.add_argument('-size',               metavar='n',          dest='size',                  type=parse_size, action='append',                   help='')
     parser.add_argument('-true',                                     dest='true',                  action='store_true',                                help='Always true')
     parser.add_argument('-type',               metavar='c',          dest='type',                  type=gufi_common.get_char,                          help='File is of type c')
@@ -607,7 +613,7 @@ def run(argv, config_path):
 
         S = 'INSERT INTO {0} {1}'.format(
             args.inmemory_name,
-            gufi_common.build_query(['NULL', 'path({}.name)'.format(SUMMARY)] + ['{}.{}'.format(SUMMARY, column) for column in columns],
+            gufi_common.build_query(['NULL', 'path({0}.name, {0}.rollupscore)'.format(SUMMARY)] + ['{}.{}'.format(SUMMARY, column) for column in columns],
                                     [SUMMARY],
                                     build_where(args, SUMMARY),
                                     build_group_by(args, SUMMARY),
@@ -616,7 +622,7 @@ def run(argv, config_path):
 
         E = 'INSERT INTO {0} {1}'.format(
             args.inmemory_name,
-            gufi_common.build_query(['NULL', 'path({}.name) || "/" || {}.name'.format(SUMMARY, PENTRIES)] + ['{}.{}'.format(PENTRIES, column) for column in columns],
+            gufi_common.build_query(['NULL', 'path({0}.name, {0}.rollupscore) || "/" || {1}.name'.format(SUMMARY, PENTRIES)] + ['{}.{}'.format(PENTRIES, column) for column in columns],
                                     [SUMMARY, PENTRIES],
                                     build_where(args, PENTRIES) + ['{}.inode == {}.pinode'.format(SUMMARY, PENTRIES)],
                                     build_group_by(args, PENTRIES),

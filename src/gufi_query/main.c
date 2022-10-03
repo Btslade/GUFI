@@ -234,7 +234,7 @@ static const char ATTACH_NAME[] = "tree";
 pthread_mutex_t global_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Push the subdirectories in the current directory onto the queue */
-static size_t descend2(struct QPTPool *ctx,
+static size_t descend2(QPTPool_t *ctx,
                        const size_t id,
                        struct work *passmywork,
                        DIR *dir,
@@ -271,10 +271,10 @@ static size_t descend2(struct QPTPool *ctx,
     if (level_check) {
         buffered_end(level_branch);
 
-        /* go ahead and send the subdirs to the queue since we need to look */
-        /* further down the tree.  loop over dirents, if link push it on the */
-        /* queue, if file or link print it, fill up qwork structure for */
-        /* each */
+        /* Send subdirs to queue */
+        /* loop over dirents*/
+        /* skip db.db and any filename listed in the trie struct*/
+        /* fill qwork struct for each dirent*/
         buffered_start(while_branch);
         while (1) {
             buffered_start(readdir_call);
@@ -293,7 +293,7 @@ static size_t descend2(struct QPTPool *ctx,
             buffered_start(strncmp_call);
             const size_t len = strlen(entry->d_name);
             const int skip = (trie_search(skip_names, entry->d_name, len) ||
-                              (strncmp(entry->d_name + len - 3, ".db", 3) == 0));
+                             (strncmp(entry->d_name + len - 3, ".db", 3) == 0));
             buffered_end(strncmp_call);
 
             buffered_start(strncmp_branch);
@@ -307,7 +307,7 @@ static size_t descend2(struct QPTPool *ctx,
 
             buffered_start(snprintf_call);
             struct work qwork;
-            qwork.name_len = SNFORMAT_S(qwork.name, MAXPATH, 3, passmywork->name, strlen(passmywork->name), "/", (size_t) 1, entry->d_name, len);
+            qwork.name_len = SNFORMAT_S(qwork.name, MAXPATH, 3, passmywork->name, passmywork->name_len, "/", (size_t) 1, entry->d_name, len);
             buffered_end(snprintf_call);
 
             /* buffered_end(lstat_call); */
@@ -369,7 +369,7 @@ static size_t descend2(struct QPTPool *ctx,
     return pushed;
 }
 
-int processdir(struct QPTPool *ctx, const size_t id, void *data, void *args) {
+int processdir(QPTPool_t *ctx, const size_t id, void *data, void *args) {
     int recs;
     char shortname[MAXPATH];
     char endname[MAXPATH];
@@ -857,21 +857,14 @@ int main(int argc, char *argv[])
     #endif
 
     /* provide a function to print if PRINT is set */
-    struct QPTPool *pool = QPTPool_init(in.maxthreads, NULL, NULL
-                                        #if defined(DEBUG) && defined(PER_THREAD_STATS)
-                                        , timestamp_buffers
-                                        #endif
+    QPTPool_t *pool = QPTPool_init(in.maxthreads, &pa, NULL, NULL
+                                   #if defined(DEBUG) && defined(PER_THREAD_STATS)
+                                   , timestamp_buffers
+                                   #endif
         );
 
     if (!pool) {
         fprintf(stderr, "Failed to initialize thread pool\n");
-        aggregate_fin(&aggregate, &in);
-        PoolArgs_fin(&pa, in.maxthreads);
-        return -1;
-    }
-
-    if (QPTPool_start(pool, &pa) != (size_t) in.maxthreads) {
-        fprintf(stderr, "Failed to start threads\n");
         aggregate_fin(&aggregate, &in);
         PoolArgs_fin(&pa, in.maxthreads);
         return -1;
@@ -900,8 +893,12 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        /* parent of input path */
         mywork->root = argv[i];
         mywork->root_len = mywork->name_len;
+        while (mywork->root_len && (mywork->root[mywork->root_len - 1] != '/')) {
+            mywork->root_len--;
+        }
 
         /* push the path onto the queue */
         QPTPool_enqueue(pool, i % in.maxthreads, processdir, mywork);
