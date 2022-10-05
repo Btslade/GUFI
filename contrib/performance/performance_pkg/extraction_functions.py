@@ -1,6 +1,15 @@
 import shlex
 import sqlite3
 import subprocess
+from . import create_table_functions as ct
+
+def check_if_table_exists(table, keys_list, con):
+    if table == []:
+        create_table_str = ' FLOAT,'.join("'" + str(x) + "'" for x in keys_list)
+        create_table_str = create_table_str.replace("'commit' FLOAT", "'commit'")
+        create_table_str = create_table_str.replace("'branch' FLOAT", "'branch'")
+        create_table_str = create_table_str.replace("'Real time (main)'", "'Real time (main)' FLOAT") 
+        con.execute(f"CREATE TABLE t ({create_table_str});")
 
 def run_get_stdout(command):
     p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
@@ -63,6 +72,11 @@ GUFI_QUERY_COLUMNS = [
 
 # TODO: define function to set up gufi_query database
 
+
+def list_clean(lst): 
+    lst = str(lst).replace('[', '')
+    return lst.replace(']','')
+
 def data_to_db(con        : sqlite3.Connection,
                data       : dict,
                columns    : list,
@@ -86,13 +100,17 @@ def data_to_db(con        : sqlite3.Connection,
     -------
     None
     '''
-
+    table = con.execute(f"PRAGMA table_info({table_name});").fetchall()
+    if table == []:
+        ct.create_times_table(con, columns, table_name)
     events = []
     values = []
     for col, convert in columns:
         events += [col]
         values += [convert(data[col])]
-
+        
+    events = list_clean(events)
+    values = list_clean(values)
     con.execute(f"INSERT INTO {table_name} ( {events} ) VALUES ( {values} );")
 
 def process_debug_line(line   : str,
@@ -120,7 +138,6 @@ def process_debug_line(line   : str,
     dictionary of event -> value
 
     '''
-
     event, value = line.split(sep)
     event = event.strip()
     value = value.strip().rstrip(rstrip)
@@ -154,7 +171,7 @@ def gufi_query(con             : sqlite3.Connection,
         'branch' : run_get_stdout('git rev-parse --abbrev-ref HEAD')[:-1],
     }
     for line in debug_output:
-        if line == '':
+        if line == '' or line == '\n':
             continue
 
         data.update(process_debug_line(line, ':', 's'))
