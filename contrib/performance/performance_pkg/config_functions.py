@@ -1,6 +1,9 @@
 from configparser import ConfigParser, ExtendedInterpolation
-import json
 from . import graphing_objects as go
+
+
+def parse_config_list(line):
+    return [item.strip() for item in line.split(',')]
 
 def read_ini(config_file_path, database_path):
     graph = go.Graph() #Graph object in graphing_objects.py
@@ -12,11 +15,11 @@ def read_ini(config_file_path, database_path):
         
     try:
         graph.data.path_to_save_to = parser.get('data', 'path_to_save_to', fallback='graph.png')
-        graph.data.commit_list = json.loads(parser.get('data', 'commit_list', fallback= '["HEAD~3..HEAD"]'))
+        graph.data.commit_list = parse_config_list(parser.get('data', 'commit_list', fallback= "HEAD~3..HEAD"))
     except: #If the user deletes the entire section
         graph.data.path_to_csv = 'database.db'
         graph.data.path_to_save_to = 'graph.png'
-        graph.data.commit_list = ["HEAD~3..HEAD"]
+        graph.data.commit_list = "HEAD~3..HEAD"
 
     #[basic_attributes]
     try:

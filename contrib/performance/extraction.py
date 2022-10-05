@@ -4,20 +4,16 @@ import sys
 
 from performance_pkg import extraction_functions as ef
 from performance_pkg import hashing_functions as hf
-
+from performance_pkg import create_table_functions as ct
 
 
 
 def parse_command_line_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--hashdb',
-                        default=hf.DATABASE_FILE,
-                        metavar='filename',
-                        help='Database file to save this configuration to')
-    parser.add_argument('--hash',
-                        default='md5', choices=hf.Hashes.keys(),
-                        metavar='hash_function',
-                        help='Hashing method to use')
+    parser.add_argument('--combined_hash',
+                        metavar='combined_hash',
+                        help='Combined hash ',
+                        required = True)
     parser.add_argument('--table',
                         default='cumulative_times',
                         metavar='name',
@@ -29,48 +25,14 @@ def parse_command_line_arguments():
                         default=None,
                         metavar='dir',
                         help='Directory to create new database files. Defaults to the current directory')
-    parser.add_argument('--override',
-                        default=None,
-                        metavar='basename',
-                        help='Database name. Overrides machine_hash and gufi_hash')
-    parser.add_argument('--machine_hash',
-                        metavar='machine_hash',
-                        help='Hash of machine configuration')
-    parser.add_argument('--gufi_hash',
-                        metavar='gufi_hash',
-                        help='Hash of GUFI command')
+
     return parser.parse_args()
 
 if __name__ == '__main__':
     args = parse_command_line_arguments()
-
-    # generate filename of debug data database
-    if args.override:
-        combined_hash = args.override
-    else:
-        combined_hash = hf.hash_all_values(args)
-
-    try:
-        
-        
-        # open the database of all known hashes
-        known_hashes = sqlite3.connect(args.hashdb)
-        print(known_hashes.execute(f"SELECT COUNT({hf.COMBINED_HASH_COL}) FROM {hf.FULL_HASH_TABLE} WHERE {hf.COMBINED_HASH_COL} == '{combined_hash}';").fetchall())
-        # check if this hash already exists THIS IS BEING DONE BELOW
-        if known_hashes.execute(f"SELECT COUNT({hf.COMBINED_HASH_COL}) FROM {hf.FULL_HASH_TABLE} WHERE {hf.COMBINED_HASH_COL} == '{combined_hash}';").fetchall()[0][0] == 0:
-            hf.add_to_full_hash_table(known_hashes, combined_hash, args)
-            known_hashes.commit()
-    finally:
-        known_hashes.close()
-
-    # TODO: find out which GUFI command was used to generate this combined hash
-
-    # fixed/known format
     if args.path:
-        combined_hash=f'{args.path}/{combined_hash}.db'
-        print(f'Writing to {combined_hash}')
-
-
+        args.combined_hash=f'{args.path}/{args.combined_hash}.db'
+        print(f'Writing to {args.combined_hash}')
 
     try:
         # open the database containing the actual data
@@ -79,7 +41,13 @@ if __name__ == '__main__':
         
         #TODO: check if file exists 
         
-        data_con = sqlite3.connect(f'{combined_hash}.db')
+        data_con = sqlite3.connect(f'{args.combined_hash}.db')
+        
+        #Create table inside of new hashed database
+        table_name = args.table
+        table = data_con.execute(f"PRAGMA table_info({table_name});").fetchall()
+        if table == []:
+            ct.create_times_table(data_con, ef.GUFI_QUERY_COLUMNS, table_name)
 
         # TODO: Run checks below 
         

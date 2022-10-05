@@ -100,9 +100,6 @@ def data_to_db(con        : sqlite3.Connection,
     -------
     None
     '''
-    table = con.execute(f"PRAGMA table_info({table_name});").fetchall()
-    if table == []:
-        ct.create_times_table(con, columns, table_name)
     events = []
     values = []
     for col, convert in columns:

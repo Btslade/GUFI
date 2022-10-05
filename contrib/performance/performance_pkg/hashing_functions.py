@@ -1,8 +1,5 @@
-from base64 import urlsafe_b64encode, urlsafe_b64decode
-from binascii import hexlify, unhexlify
 import hashlib
-import os
-import sqlite3
+
 
 # copied from trace_anonymizer.py
 # Known hashes
@@ -19,9 +16,6 @@ FULL_HASH_TABLE   = 'full_hash'
 COMBINED_HASH_COL = 'combined_hash'
 DATABASE_FILE = 'performance_configurations.db'
 
-
-def add_to_table(con, hash):
-    con.execute(f'INSERT INTO machine (hash, cpu, ram, machine_name, hash_type, notes) VALUES ("{hash}", "{args.cpu}", "{args.ram}", "{args.machine_name}", "{args.hash}", "{args.notes}");')
 
 def add_to_machine_table(con, hash, args):
     con.execute(f'INSERT INTO machine (hash, cpu, ram, machine_name, hash_type, notes) VALUES ("{hash}", "{args.cpu}", "{args.ram}", "{args.machine_name}", "{args.hash}", "{args.notes}");')
