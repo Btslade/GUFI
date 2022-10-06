@@ -1,7 +1,7 @@
 import shlex
 import sqlite3
 import subprocess
-from . import create_table_functions as ct
+from . import database_functions as ct
 
 def check_if_table_exists(table, keys_list, con):
     if table == []:

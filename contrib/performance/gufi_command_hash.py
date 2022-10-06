@@ -1,5 +1,6 @@
 import argparse
 from performance_pkg import hashing_functions as hf
+from performance_pkg import database_functions as df
 import sqlite3
 def parse_command_line_arguments():
     parser = argparse.ArgumentParser()
@@ -44,17 +45,20 @@ def parse_command_line_arguments():
     #parser.add_argument("-e", "-E", "--entires", dest = "E", default = "", help="Name of machine")
     parser.add_argument("--tree", dest = "tree",  help="What tree you are running on", required= True)
     parser.add_argument("--notes", default="", dest = "notes",  help = "Additional notes")
-    parser.add_argument("--database", dest='database', default = hf.DATABASE_FILE, help = "Specify database to write to other than the default")
-
+    parser.add_argument("--database", dest='database', default = hf.HASH_DATABASE_FILE, help = "Specify database to write to other than the default")
+    parser.add_argument("--table",
+                    dest='table',
+                    default=hf.GUFI_COMMAND_TABLE)
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
     args = parse_command_line_arguments()
-    hash_to_use = hf.hash_gufi_command(args)
-    print(f'Resulting hash: {hash_to_use}')
+    df.check_if_database_exists(args.database, df.HASH_DB)
     try:
+        hash_to_use = hf.hash_gufi_command(args)
+        print(f'Resulting hash: {hash_to_use}')
         con = sqlite3.connect(args.database)
         hf.add_to_gufi_command_table(con, hash_to_use, args)
         con.commit()

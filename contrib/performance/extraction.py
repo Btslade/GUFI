@@ -3,8 +3,7 @@ import sqlite3
 import sys
 
 from performance_pkg import extraction_functions as ef
-from performance_pkg import hashing_functions as hf
-from performance_pkg import create_table_functions as ct
+from performance_pkg import database_functions as df
 
 
 
@@ -15,7 +14,7 @@ def parse_command_line_arguments():
                         help='Combined hash ',
                         required = True)
     parser.add_argument('--table',
-                        default='cumulative_times',
+                        default=df.CUMULATIVE_TABLE,
                         metavar='name',
                         help='Name of table to write parsed input to')
     parser.add_argument('--notes',
@@ -30,8 +29,10 @@ def parse_command_line_arguments():
 
 if __name__ == '__main__':
     args = parse_command_line_arguments()
+    df.check_if_database_exists(f'{args.combined_hash}.db', df.CUMULATIVE_DB)
+
     if args.path:
-        args.combined_hash=f'{args.path}/{args.combined_hash}.db'
+        args.combined_hash=f'{args.path}/{args.combined_hash}'
         print(f'Writing to {args.combined_hash}')
 
     try:
@@ -40,14 +41,9 @@ if __name__ == '__main__':
         
         
         #TODO: check if file exists 
-        
         data_con = sqlite3.connect(f'{args.combined_hash}.db')
         
-        #Create table inside of new hashed database
-        table_name = args.table
-        table = data_con.execute(f"PRAGMA table_info({table_name});").fetchall()
-        if table == []:
-            ct.create_times_table(data_con, ef.GUFI_QUERY_COLUMNS, table_name)
+
 
         # TODO: Run checks below 
         

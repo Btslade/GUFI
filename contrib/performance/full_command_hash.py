@@ -1,13 +1,13 @@
 import sqlite3
 import argparse
 from performance_pkg import hashing_functions as hf
-
+from performance_pkg import database_functions as db
 
 def parse_command_line_arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--hashdb',
-                        default=hf.DATABASE_FILE,
+                        default=hf.HASH_DATABASE_FILE,
                         metavar='filename',
                         help='Database file to save this configuration to')
     parser.add_argument('--hash',
@@ -30,6 +30,9 @@ def parse_command_line_arguments():
                         default="", 
                         dest = "notes",  
                         help = "Additional notes")
+    parser.add_argument("--table",
+                        dest='table',
+                        default=hf.FULL_HASH_TABLE)
 
     return parser.parse_args()
 
@@ -37,17 +40,14 @@ def parse_command_line_arguments():
 
 if __name__ == "__main__":
     args = parse_command_line_arguments()
-
+    db.check_if_database_exists(args.hashdb, db.HASH_DB)
     if args.override:
         combined_hash = args.override
     else:
         combined_hash = hf.hash_all_values(args)
 
     try:
-        
-        # open the database of all known hashes
         known_hashes = sqlite3.connect(args.hashdb)
-        # check if this hash already exists THIS IS BEING DONE BELOW
         if known_hashes.execute(f"SELECT COUNT({hf.COMBINED_HASH_COL}) FROM {hf.FULL_HASH_TABLE} WHERE {hf.COMBINED_HASH_COL} == '{combined_hash}';").fetchall()[0][0] == 0:
             hf.add_to_full_hash_table(known_hashes, combined_hash, args)
             known_hashes.commit()
