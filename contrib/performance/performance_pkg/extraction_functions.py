@@ -3,21 +3,13 @@ import sqlite3
 import subprocess
 from . import database_functions as ct
 
-def check_if_table_exists(table, keys_list, con):
-    if table == []:
-        create_table_str = ' FLOAT,'.join("'" + str(x) + "'" for x in keys_list)
-        create_table_str = create_table_str.replace("'commit' FLOAT", "'commit'")
-        create_table_str = create_table_str.replace("'branch' FLOAT", "'branch'")
-        create_table_str = create_table_str.replace("'Real time (main)'", "'Real time (main)' FLOAT") 
-        con.execute(f"CREATE TABLE t ({create_table_str});")
+# simple conversion from python types to SQLite types
+TYPE2SQLITE = {
+    str   : 'TEXT',
+    float : 'FLOAT',
+    int   : 'INT'
+}
 
-def run_get_stdout(command):
-    p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
-    command_result, _= p.communicate()
-    command_result = command_result.decode('ascii')
-    return command_result
-
-# TODO: move this to somewhere else
 # known gufi_query columns, in the order they are expected and their types
 GUFI_QUERY_COLUMNS = [
     # other columns
@@ -70,10 +62,18 @@ GUFI_QUERY_COLUMNS = [
     ['Real time (main)', float],
 ]
 
-# TODO: define function to set up gufi_query database
+def check_if_table_exists(table, columns, con):
+    if table == []:
+        cols = ', '.join(['\'' + col + ' ' + TYPE2SQLITE[col_type] + '\'' for col, col_type in columns])
+        con.execute(f'CREATE TABLE t ({cols});')
 
+def run_get_stdout(command):
+    p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    command_result, _= p.communicate()
+    command_result = command_result.decode('ascii')
+    return command_result
 
-def list_clean(lst): 
+def list_clean(lst):
     lst = str(lst).replace('[', '')
     return lst.replace(']','')
 
@@ -105,7 +105,7 @@ def data_to_db(con        : sqlite3.Connection,
     for col, convert in columns:
         events += [col]
         values += [convert(data[col])]
-        
+
     events = list_clean(events)
     values = list_clean(values)
     con.execute(f"INSERT INTO {table_name} ( {events} ) VALUES ( {values} );")
