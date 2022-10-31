@@ -61,11 +61,10 @@
 
 
 
-import sys
+TABLE_NAME = 'raw_data_dbs'
 
-import common
-
-# do not call this file directly - script will set up environment
-if __name__ == '__main__':
-    gufi_getfattr = common.import_tool('gufi_getfattr')
-    sys.exit(gufi_getfattr.run(sys.argv, common.CONFIG_PATH))
+TABLE_COLS = [
+    ['hash',         str],
+    ['machine_hash', str],
+    ['gufi_hash',    str],
+]
