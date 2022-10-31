@@ -66,6 +66,7 @@ import os
 
 import gufi_common
 
+
 # default configuration file location
 DEFAULT_PATH = '/etc/GUFI/config'
 
@@ -111,6 +112,7 @@ class Config(object):
                 else:
                     out[key] = value
 
+
         for key in settings:
             if key not in out:
                 raise Exception('Missing Setting {0}'.format(key))
@@ -134,17 +136,23 @@ class Server(Config):
     def __init__(self, file_reference):
         super(Server, self).__init__(Server.SETTINGS, file_reference)
 
+
     def threads(self):
+        '''return number of threads to use'''
         return self.config[Server.THREADS]
 
     def executable(self):
+        '''return absolute path of gufi_query'''
         return self.config[Server.EXECUTABLE]
 
     def indexroot(self):
+        '''return absolute path of root directory for GUFI to traverse'''
         return self.config[Server.INDEXROOT]
 
     def outputbuffer(self):
+        '''return size of per-thread buffers used to buffer prints'''
         return self.config[Server.OUTPUTBUFFER]
+
 
 class Client(Config):
     SERVER       = 'Server'       # hostname
@@ -162,12 +170,15 @@ class Client(Config):
         super(Client, self).__init__(Client.SETTINGS, file_reference)
 
     def server(self):
+        '''return hostname of server'''
         return self.config[Client.SERVER]
 
     def port(self):
+        '''return ssh port'''
         return self.config[Client.PORT]
 
     def paramiko(self):
+        '''return location of paramiko installation'''
         return self.config[Client.PARAMIKO]
 
 if __name__ == '__main__':

@@ -68,6 +68,8 @@ import hashlib
 import os
 import sys
 
+#pylint: disable=syntax-error
+
 # trace file format
 PATH_IDX = 0
 UID_IDX  = 5

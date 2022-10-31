@@ -191,6 +191,7 @@ ROLLUP_SUMMARY_WHERE = '''
     END
 '''
 
+
 def build_query(select, tables, where=None, group_by=None,
                 order_by=None, num_results=None, extra=None):
     '''
@@ -246,6 +247,7 @@ def cpus():
         return multiprocessing.cpu_count()
     except:
         return 1
+
 
 def add_common_flags(parser):
     '''Common GUFI tool flags'''
