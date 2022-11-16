@@ -60,12 +60,17 @@
 # OF SUCH DAMAGE.
 
 
+
 # pylint: disable=too-many-arguments
 '''Collection of functions to generate graph'''
-from matplotlib import axes
 import matplotlib.pyplot as plt
 
-import performance_pkg.graphing_objects as go
+from matplotlib import axes
+from configparser import ConfigParser
+
+
+from performance_pkg import config_functions as cf
+
 
 def add_annotations(x_vals: list,
                     y_vals: list,
@@ -139,9 +144,99 @@ def set_hash_len(hash: list,
         return hash[hash_len:]  # return the last 'xlen' characters of hash
     return hash[:hash_len]  # return the first 'xlen' characters of hash
 
+def line_integrety_check(line_colors: list,
+                         line_types: list,
+                         markers: list):
+    '''
+    ensure line will always have a color, type, and marker by adding default
+    values when empty
+
+    ...
+
+    Inputs
+    ------
+    line_colors : list
+        list of line colors
+    line_types : list
+        list of line types
+    line_markers : list
+        list of line markers
+    Returns
+    -------
+    None
+    '''
+    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+    if len(line_colors) == 0:
+        line_colors.extend(colors)
+    if len(line_types) == 0:
+        line_types.append("solid")
+    if len(markers) == 0:
+        markers.append("o")
+
+def add_annotations_to_graph(parser: ConfigParser,
+                             min_colors: list,
+                             max_colors: list,
+                             text_colors: list,
+                             xs_to_plot: list,
+                             ys_to_plot: list,
+                             ax: axes.Axes,
+                             lower_annotation: list,
+                             upper_annotation: list):
+    '''
+    adds annotations based on user's input
+    ...
+    Inputs
+    ------
+    graph : go.Graph
+        graph object containing all user input from config
+    xs_to_plot : list
+        list of x_locations of data used as reference for adding annotations
+    ys_to_plot : list
+        list of y_locations of data used as reference for adding annotaitons
+    ax : axes.Axes,
+        matplotlib axes to plot on
+    lower_annotation : list
+        list of y locations of lower whisker of error bars for adding
+        annotations
+    upper_annotation : list
+        list of y locations of upper whisker of error bars for adding
+        annotations
+    Returns
+    -------
+    None
+    '''
+    if cf.get_key_value(parser, cf.ANNOTATIONS, cf.SHOW_ANNOTATIONS):
+        add_annotations(xs_to_plot,
+                        ys_to_plot,
+                        text_colors,
+                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.DEFAULT_TEXT_COLOR),
+                        ax,
+                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.OFFSET),
+                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.PRECISION_POINTS))
+    
+    min_max_annotation = cf.get_key_value(parser, cf.ERROR_BAR, cf.MIN_MAX_ANNOTATION)
+    show_error_bar = cf.get_key_value(parser, cf.ERROR_BAR, cf.SHOW_ERROR_BAR)
+    
+    if min_max_annotation and show_error_bar:
+        add_annotations(xs_to_plot,
+                        lower_annotation,
+                        min_colors,
+                        min_colors[0],
+                        ax,
+                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.OFFSET),
+                        cf.get_key_value(parser, cf.ERROR_BAR, cf.PRECISION_POINTS),
+                        True)
+        add_annotations(xs_to_plot,
+                        upper_annotation,
+                        max_colors,
+                        max_colors[0],
+                        ax,
+                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.OFFSET),
+                        cf.get_key_value(parser, cf.ERROR_BAR, cf.PRECISION_POINTS),
+                        True)
+
 def graph_labels(ax: axes.Axes,
-                 basic_attributes: go.BasicAttributes,
-                 axes: go.Axes):
+                 parser: ConfigParser):
     '''
     add labels to the graph
 
@@ -160,89 +255,9 @@ def graph_labels(ax: axes.Axes,
     -------
     None
     '''
-    ax.legend(basic_attributes.columns_to_plot,
+    ax.legend(cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.COLUMNS_TO_PLOT),
               bbox_to_anchor=(1, 1),
               loc="upper left")
-    ax.set_title(basic_attributes.graph_title)
-    ax.set_xlabel(axes.x_label)
-    ax.set_ylabel(axes.y_label)
-
-def line_integrety_check(graph_line: go.Line):
-    '''
-    ensure line will always have a color, type, and marker by adding default
-    values when empty
-
-    ...
-
-    Inputs
-    ------
-    graph_line : go.Line
-        line attributes to validate
-
-    Returns
-    -------
-    None
-    '''
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    if len(graph_line.line_colors) == 0:
-        graph_line.line_colors.extend(colors)
-    if len(graph_line.line_types) == 0:
-        graph_line.line_types.append("solid")
-    if len(graph_line.markers) == 0:
-        graph_line.markers.append("o")
-
-def add_annotations_to_graph(graph: go.Graph,
-                             xs_to_plot: list,
-                             ys_to_plot: list,
-                             ax: axes.Axes,
-                             lower_annotation: list,
-                             upper_annotation: list):
-    '''
-    adds annotations based on user's input
-
-    ...
-
-    Inputs
-    ------
-    graph : go.Graph
-        graph object containing all user input from config
-    xs_to_plot : list
-        list of x_locations of data used as reference for adding annotations
-    ys_to_plot : list
-        list of y_locations of data used as reference for adding annotaitons
-    ax : axes.Axes,
-        matplotlib axes to plot on
-    lower_annotation : list
-        list of y locations of lower whisker of error bars for adding
-        annotations
-    upper_annotation : list
-        list of y locations of upper whisker of error bars for adding
-        annotations
-
-    Returns
-    -------
-    None
-    '''
-    if graph.annotations.show_annotations:
-        add_annotations(xs_to_plot,
-                        ys_to_plot,
-                        graph.annotations.text_color,
-                        graph.annotations.default_text_color,
-                        ax,
-                        graph.annotations.offset,
-                        graph.annotations.precision_points)
-    if graph.error_bar.min_max_annotation and graph.error_bar.show_error_bar:
-        add_annotations(xs_to_plot, lower_annotation,
-                        graph.error_bar.min_color,
-                        graph.error_bar.min_color[0],
-                        ax,
-                        graph.annotations.offset,
-                        graph.error_bar.precision_points,
-                        True)
-        add_annotations(xs_to_plot, upper_annotation,
-                        graph.error_bar.max_color,
-                        graph.error_bar.max_color[0],
-                        ax,
-                        graph.annotations.offset,
-                        graph.error_bar.precision_points,
-                        True)
+    ax.set_title(cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.GRAPH_TITLE))
+    ax.set_xlabel(cf.get_key_value(parser, cf.AXES, cf.X_LABEL))
+    ax.set_ylabel(cf.get_key_value(parser, cf.AXES, cf.Y_LABEL))

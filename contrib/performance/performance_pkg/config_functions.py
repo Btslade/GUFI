@@ -61,11 +61,104 @@
 
 
 
-'''Collection of methods/functions for reading and storeing data from a config file '''
-from configparser import ConfigParser, ExtendedInterpolation
-import performance_pkg.graphing_objects as go
+'''Collection of methods/functions for reading and storing data from a config file'''
+from configparser import ConfigParser
 
-EXCEPTION_MESSAGE = 'section of config not found. Using default values'
+#SECTIONS
+DATA = "data"
+BASIC_ATTRIBUTES = "basic_attributes"
+LINE = "line"
+AXES = "axes"
+ANNOTATIONS = "annotations"
+ERROR_BAR = "error_bar"
+
+# KEYS
+PATH_TO_SAVE_TO = "path_to_save_to"
+COMMIT_LIST = "commit_list"
+COLUMNS_TO_PLOT = "columns_to_plot"
+GRAPH_TITLE = "graph_title"
+DIMENSIONS = "dimensions"
+LINE_COLORS = "line_colors"
+LINE_TYPES = "line_types"
+MARKERS = "markers"
+X_LABEL = "x_label"
+Y_LABEL = "y_label"
+Y_RANGE = "y-range"
+COMMIT_HASH_LEN = "commit_hash_len"
+SHOW_ANNOTATIONS = "show_annotaions"
+PRECISION_POINTS = "precision_points"
+OFFSET = "offset"
+TEXT_COLORS = "text_colors"
+DEFAULT_TEXT_COLOR = "default_text_color"
+SHOW_ERROR_BAR = "show_error_bar"
+CAP_SIZE = "cap_size"
+MIN_MAX_ANNOTATION = "min_max_annotation"
+EB_PRECISION_POINTS = "eb_precision_points"
+MIN_COLORS = "min_colors"
+MAX_COLORS = "max_colors"
+
+DEFAULTS = {PATH_TO_SAVE_TO: ["./db_test.png", str],
+            COMMIT_LIST: ["HEAD~10..HEAD", list],
+            COLUMNS_TO_PLOT: ["Real time (main)", list],
+            GRAPH_TITLE: ["Graph", str],
+            DIMENSIONS: ["12,6", list],
+            LINE_COLORS: ["green", list],
+            LINE_TYPES: ["solid", list],
+            MARKERS: ["o", list],
+            X_LABEL: ["Commit Hash", str],
+            Y_LABEL: ["Time (seconds)", str],
+            Y_RANGE: ["default", list],
+            COMMIT_HASH_LEN: [6, int],
+            SHOW_ANNOTATIONS: [True, bool],
+            PRECISION_POINTS: [2, int],
+            OFFSET: [5, int],
+            TEXT_COLORS: ["orange", list],
+            DEFAULT_TEXT_COLOR: ["orange", str],
+            SHOW_ERROR_BAR: [True, bool],
+            CAP_SIZE: [10, int],
+            MIN_MAX_ANNOTATION: [True, bool],
+            EB_PRECISION_POINTS: [2, int],
+            MIN_COLORS: ["green", list],
+            MAX_COLORS: ["red", list]}
+
+def get_key_value(parser: ConfigParser,
+                  section: str,
+                  key: str):
+    '''
+    Gets key value from config file, uses a default value if key cannot be found
+
+    ...
+
+    Inputs
+    ------
+    parser : ConfigParser
+        parser to read data read from a config file
+    section : str
+        Section from a config file
+    key : str
+        key from a config file
+
+    Returns
+    -------
+    key value from config file
+    '''
+    if DEFAULTS[key][1] == str:
+        key_value = parser.get(section,
+                               key,
+                               fallback=DEFAULTS[key][0])
+    if DEFAULTS[key][1] == int:
+        key_value = parser.getint(section,
+                                  key,
+                                  fallback=DEFAULTS[key][0])
+    if DEFAULTS[key][1] == bool:
+        key_value = parser.getboolean(section,
+                                      key,
+                                      fallback=DEFAULTS[key][0])
+    if DEFAULTS[key][1] == list:
+        key_value = parse_config_list(parser.get(section,
+                                                 key,
+                                                 fallback=DEFAULTS[key][0]))
+    return key_value
 
 def parse_config_list(line):
     '''
@@ -84,254 +177,3 @@ def parse_config_list(line):
     '''
     entries = [item.strip() for item in line.split(',')]
     return [item.replace('"', '') for item in entries]
-
-def read_data_section(graph, parser):
-    '''
-    Extract contents from data section of config file
-
-    ...
-
-    Inputs
-    ------
-    graph : go.Graph
-        graph object to store extracted data into
-    parser : ConfigParser
-        parser contatining data from config file
-
-    Returns
-    -------
-    None
-    '''
-    try:
-        graph.data.path_to_save_to = parser.get('data',
-                                                'path_to_save_to',
-                                                fallback='graph.png')
-        graph.data.commit_list = parse_config_list(parser.get('data',
-                                                              'commit_list',
-                                                              fallback="HEAD~3..HEAD"))
-    except AttributeError:  # If the user deletes the entire section
-        print(f'data {EXCEPTION_MESSAGE}')
-        graph.data.path_to_csv = 'database.db'
-        graph.data.path_to_save_to = 'graph.png'
-        graph.data.commit_list = "HEAD~3..HEAD"
-
-def read_basic_attributes_section(graph, parser):
-    '''
-    Extract contents from basic_attributes section of config file
-
-    ...
-
-    Inputs
-    ------
-    graph : go.Graph
-        graph object to store extracted data into
-    parser : ConfigParser
-        parser contatining data from config file
-
-    Returns
-    -------
-    None
-    '''
-
-    try:
-        graph.basic_attributes.columns_to_plot = parse_config_list(parser.get('basic_attributes',
-                                                                              'columns_to_plot',
-                                                                              fallback="Real time (main)"))
-        graph.basic_attributes.graph_title = parser.get('basic_attributes',
-                                                        'graph_title',
-                                                        fallback='Basic Graph')
-        graph.basic_attributes.dimensions = parse_config_list(parser.get('basic_attributes',
-                                                                         'dimension',
-                                                                         fallback='12,6'))
-        graph.basic_attributes.dimensions[0] = int(graph.basic_attributes.dimensions[0])
-        graph.basic_attributes.dimensions[1] = int(graph.basic_attributes.dimensions[1])
-    except AttributeError:
-        print(f'basic_attributes {EXCEPTION_MESSAGE}')
-        graph.basic_attributes.columns_to_plot = "Real time (main)"
-        graph.basic_attributes.graph_title = 'Basic Graph'
-        graph.basic_attributes.dimensions = "12,6"
-
-def read_line_section(graph, parser):
-    '''
-    Extract contents from line section of config file
-
-    ...
-
-    Inputs
-    ------
-    graph : go.Graph
-        graph object to store extracted data into
-    parser : ConfigParser
-        parser contatining data from config file
-
-    Returns
-    -------
-    None
-    '''
-    try:
-        graph.line.line_colors = parse_config_list(parser.get('line',
-                                                              'line_colors',
-                                                              fallback="blue"))
-        graph.line.line_types = parse_config_list(parser.get('line',
-                                                             'line_types',
-                                                             fallback="solid"))
-        graph.line.markers = parse_config_list(parser.get('line',
-                                                          'markers',
-                                                          fallback="o"))
-    except AttributeError:
-        print(f'line {EXCEPTION_MESSAGE}')
-        graph.line.line_colors = "blue"
-        graph.line.line_types = "solid"
-        graph.line.markers = "o"
-
-def read_axes_section(graph, parser):
-    '''
-    Extract contents from axes section of config file
-
-    ...
-
-    Inputs
-    ------
-    graph : go.Graph
-        graph object to store extracted data into
-    parser : ConfigParser
-        parser contatining data from config file
-
-    Returns
-    -------
-    None
-    '''
-    try:
-        graph.axes.x_label = parser.get('axes',
-                                        'x_label',
-                                        fallback="Commit")
-        graph.axes.y_label = parser.get('axes',
-                                        'y_label',
-                                        fallback="Time (seconds)")
-        graph.axes.y_range = parse_config_list(parser.get('axes',
-                                                          'y_range',
-                                                          fallback=''))
-        graph.axes.commit_hash_len = parser.getint('axes',
-                                                   'commit_hash_len',
-                                                   fallback=6)
-    except AttributeError:
-        print(f'axes {EXCEPTION_MESSAGE}')
-        graph.axes.x_label = "Commit"
-        graph.axes.y_label = "Time (seconds)"
-        graph.axes.y_range = ''
-        graph.axes.commit_hash_len = 6
-
-def read_annotations_section(graph, parser):
-    '''
-    Extract contents from annotations section of config file
-
-    ...
-
-    Inputs
-    ------
-    graph : go.Graph
-        graph object to store extracted data into
-    parser : ConfigParser
-        parser contatining data from config file
-
-    Returns
-    -------
-    None
-    '''
-    try:
-        graph.annotations.show_annotations = parser.getboolean('annotations',
-                                                               'show_annotations',
-                                                               fallback=False)
-        graph.annotations.precision_points = parser.getint('annotations',
-                                                           'precision_points',
-                                                           fallback=2)
-        graph.annotations.offset = parser.getint('annotations',
-                                                 'offset',
-                                                 fallback=5)
-        graph.annotations.text_color = parse_config_list(parser.get('annotations',
-                                                                    'text_color',
-                                                                    fallback="green"))
-        graph.annotations.default_text_color = parser.get('annotations',
-                                                          'default_text_color',
-                                                          fallback='green')
-    except AttributeError:
-        print(f'annotations {EXCEPTION_MESSAGE}')
-        graph.annotations.show_annotations = False
-        graph.annotations.precision_points = 2
-        graph.annotations.offset = 5
-        graph.annotations.text_color = "green"
-        graph.annotations.default_text_color = 'green'
-
-def read_error_bar_section(graph, parser):
-    '''
-    Extract contents from error_bar section of config file
-
-    ...
-
-    Inputs
-    ------
-    graph : go.Graph
-        graph object to store extracted data into
-    parser : ConfigParser
-        parser contatining data from config file
-
-    Returns
-    -------
-    None
-    '''
-    try:
-        graph.error_bar.show_error_bar = parser.getboolean('error_bar',
-                                                           'show_error_bar',
-                                                           fallback=False)
-        graph.error_bar.cap_size = parser.getint('error_bar',
-                                                 'cap_size',
-                                                 fallback=10)
-        graph.error_bar.min_max_annotation = parser.getboolean('error_bar',
-                                                               'min_max_annotation',
-                                                               fallback=False)
-        graph.error_bar.precision_points = parser.getint('error_bar',
-                                                         'precision_points',
-                                                         fallback=2)
-        graph.error_bar.min_color = parse_config_list(parser.get('error_bar',
-                                                                 'min_color',
-                                                                 fallback='["blue"]'))
-        graph.error_bar.max_color = parse_config_list(parser.get('error_bar',
-                                                                 'max_color',
-                                                                 fallback='["red"]'))
-    except AttributeError:
-        print(f'error_bar {EXCEPTION_MESSAGE}')
-        graph.error_bar.show_error_bar = False
-        graph.error_bar.cap_size = 10
-        graph.error_bar.min_max_annotation = False
-        graph.error_bar.precision_points = 2
-        graph.error_bar.min_color = "blue"
-        graph.error_bar.max_color = "red"
-
-def read_ini(config_file_path):
-    '''
-    Read configuration file and extract contents
-
-    ...
-
-    Inputs
-    ------
-    config_file_path : str
-        path to configuration file
-
-    Returns
-    -------
-    graph : go.Graph
-        graph attributes extracted from config file
-    '''
-    graph = go.Graph()  # Graph object in graphing_objects.py
-    parser = ConfigParser(interpolation=ExtendedInterpolation())
-    parser.read(config_file_path)  # user will provide this at command line
-
-    read_data_section(graph, parser)
-    read_basic_attributes_section(graph, parser)
-    read_line_section(graph, parser)
-    read_axes_section(graph, parser)
-    read_annotations_section(graph, parser)
-    read_error_bar_section(graph, parser)
-
-    return graph

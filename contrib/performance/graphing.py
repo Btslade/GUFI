@@ -66,15 +66,15 @@
 import argparse
 import sqlite3
 
+from configparser import ConfigParser, ExtendedInterpolation
 from cycler import cycler
 from matplotlib import pyplot as plt
 
-from performance_pkg import commit_object as co
 from performance_pkg import config_functions as cf
+from performance_pkg import commit_object as co
 from performance_pkg import database_functions as db
 from performance_pkg import extraction_functions as ef
 from performance_pkg import graphing_functions as gf
-
 
 # pylint: enable=import-error, invalid-name, wrong-import-position, wrong-import-order
 def parse_args():
@@ -172,7 +172,7 @@ def gather_raw_commit_data(col: str,
 def process_raw_data(commit_data: co.CommitInformation,
                      raw_values: list,
                      commit: str,
-                     hash_len: int):
+                     hash_len: str):
     '''
     process data gathered into a usable and readable format
 
@@ -186,8 +186,8 @@ def process_raw_data(commit_data: co.CommitInformation,
         values to process
     commit : str
         commit to plot on x axis
-    hash_len : int
-        how many characters of the commit to write out on x axis
+    hash_len : str
+        how many characters of the commit to write out on x axis (will be cast to int)
 
     Returns
     -------
@@ -204,13 +204,20 @@ def process_raw_data(commit_data: co.CommitInformation,
 if __name__ == "__main__":
     args = parse_args()
     for filename in args.config:
-        graph = cf.read_ini(filename)
-        graph.data.path_to_database = args.database  # Necessary attribute not in config
-        con = sqlite3.connect(graph.data.path_to_database)
-        parsed_commits = identifiers_to_hashes(graph.data.commit_list)  # individual commits
-        fig, ax = plt.subplots(figsize=tuple(graph.basic_attributes.dimensions),
+        parser = ConfigParser(interpolation=ExtendedInterpolation())
+        parser.read(filename)  # user will provide this at command line
+        con = sqlite3.connect(args.database)
+        parsed_commits = identifiers_to_hashes(cf.get_key_value(parser, cf.DATA, cf.COMMIT_LIST))
+        dimensions = [int(element) for element in cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.DIMENSIONS)]
+        fig, ax = plt.subplots(figsize=tuple(dimensions),
                                facecolor="white")  # needs subplot to get access to figure and axes
-        for col in graph.basic_attributes.columns_to_plot:
+        line_colors = cf.get_key_value(parser, cf.LINE, cf.LINE_COLORS)
+        line_types = cf.get_key_value(parser, cf.LINE, cf.LINE_TYPES)
+        markers = cf.get_key_value(parser, cf.LINE, cf.MARKERS)
+        min_colors = cf.get_key_value(parser, cf.ERROR_BAR, cf.MIN_COLORS)
+        max_colors = cf.get_key_value(parser, cf.ERROR_BAR, cf.MAX_COLORS)
+        text_colors = cf.get_key_value(parser, cf.ANNOTATIONS, cf.TEXT_COLORS)
+        for col in cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.COLUMNS_TO_PLOT):
             commit_data = co.CommitInformation()
             for commit in parsed_commits:
                 raw_values = gather_raw_commit_data(col, args.table,
@@ -218,35 +225,42 @@ if __name__ == "__main__":
                 if len(raw_values) == 0:
                     continue
                 process_raw_data(commit_data, raw_values,
-                                 commit, graph.axes.commit_hash_len)
+                                 commit, cf.get_key_value(parser, cf.AXES, cf.COMMIT_HASH_LEN))
+            gf.line_integrety_check(line_colors,
+                                    line_types,
+                                    markers)  # line vals must not be empty
+            custom_cycler = (cycler(color=[line_colors[0]]) +
+                             cycler(linestyle=[line_types[0]]) +
+                             cycler(marker=[markers[0]]))
 
-            gf.line_integrety_check(graph.line)  # line vals must not be empty
-            custom_cycler = (cycler(color=[graph.line.line_colors[0]]) +
-                             cycler(linestyle=[graph.line.line_types[0]]) +
-                             cycler(marker=[graph.line.markers[0]]))
-
-            graph.line.line_colors.pop(0)
-            graph.line.line_types.pop(0)
-            graph.line.markers.pop(0)
+            line_colors.pop(0)
+            line_types.pop(0)
+            markers.pop(0)
 
             ax.set_prop_cycle(custom_cycler)
 
-            if graph.error_bar.show_error_bar:
+            if cf.get_key_value(parser, cf.ERROR_BAR, cf.SHOW_ERROR_BAR):
                 ax.errorbar(commit_data.xs_to_plot,
                             commit_data.ys_to_plot,
                             yerr=(commit_data.lower_error_bar_range,
                                   commit_data.upper_error_bar_range
                                   ),
-                            capsize=graph.error_bar.cap_size)
+                            capsize=cf.get_key_value(parser, cf.ERROR_BAR, cf.CAP_SIZE))
             else:
                 ax.errorbar(commit_data.xs_to_plot, commit_data.ys_to_plot)
 
-            gf.add_annotations_to_graph(graph, commit_data.xs_to_plot,
-                                        commit_data.ys_to_plot,
-                                        ax,
-                                        commit_data.lower_annotation,
-                                        commit_data.upper_annotation)
-        if len(graph.axes.y_range) == 2:  # If user provides custom range
-            ax.set_ylim(graph.axes.y_range[0], graph.axes.y_range[1])
-        gf.graph_labels(ax, graph.basic_attributes, graph.axes)
-        fig.savefig(graph.data.path_to_save_to, bbox_inches="tight")
+            gf.add_annotations_to_graph(parser,
+                                     min_colors,
+                                     max_colors,
+                                     text_colors,
+                                     commit_data.xs_to_plot,
+                                     commit_data.ys_to_plot,
+                                     ax,
+                                     commit_data.lower_annotation,
+                                     commit_data.upper_annotation)
+
+        y_range = cf.get_key_value(parser, cf.AXES, cf.Y_RANGE)
+        if len(y_range) == 2:  # If user provides custom range
+            ax.set_ylim(y_range[0], y_range[1])
+        gf.graph_labels(ax, parser)
+        fig.savefig(cf.get_key_value(parser, cf.DATA, cf.PATH_TO_SAVE_TO), bbox_inches="tight")

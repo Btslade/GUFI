@@ -61,14 +61,12 @@
 
 
 
-# pylint: disable=import-error, invalid-name, wrong-import-position
 ''' Create database to store cummulative times'''
 import argparse
 import sqlite3
 
 from performance_pkg import database_functions as db
 
-# pylint: enable=import-error, invalid-name, wrong-import-position
 def parse_command_line_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("--database",
@@ -84,6 +82,7 @@ if __name__ == "__main__":
     args = parse_command_line_arguments()
     try:
         con = sqlite3.connect(f"{args.database}")
-        db.create_database(con, args, db.CUMULATIVE_DB)
+        db.create_cumulative_times_table(con, args.table)
+        con.commit()
     finally:
         con.close()

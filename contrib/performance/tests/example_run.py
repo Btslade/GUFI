@@ -73,12 +73,12 @@ sys.path.insert(0, performance_packages)
 from python_unit_tests import test_hash_functions as thf
 from performance_pkg import extraction_functions as ef
 
-ef.run_get_stdout("python3 ../create_hash_database.py")
+os.system("python3 ../create_hash_database.py")
 argument_str = ''
 for i in range(0, len(thf.FULL_ARGS), 2) : argument_str += f'{thf.FULL_ARGS[i]} "{thf.FULL_ARGS[i+1]}" '
 argument_str = argument_str.split('\n')[0]
 full_hash = ef.run_get_stdout(f"python3 ../full_command_hash.py {argument_str}").rstrip()
-ef.run_get_stdout(f"python3 ../create_cumulative_times_database.py --database {full_hash}.db")
+os.system(f"python3 ../create_cumulative_times_database.py --database {full_hash}.db")
 
 #https://www.geeksforgeeks.org/python-convert-a-list-to-dictionary
 gufi_dict = {thf.GUFI_ARGS[i]: thf.GUFI_ARGS[i+1] for i in range(0, len(thf.GUFI_ARGS), 2)}
@@ -88,5 +88,5 @@ extraction_str = f'../../../build/src/{gufi_dict["--gufi"]} ' +\
                  f'../{gufi_dict["--tree"]} ' +\
                  f'2>&1 >/dev/null | python3 ../extraction.py '+\
                  f'--combined_hash {full_hash}'
-for i in range(5): os.system(extraction_str)  # Due to the amount of redirections and pipiing, os.ststem is preferable
-ef.run_get_stdout(f"python3 ../graphing.py --database {full_hash}.db --config ../configs/db_test.ini ../configs/db_test_complex.ini")
+for i in range(5): os.system(extraction_str)
+os.system(f"python3 ../graphing.py --database {full_hash}.db --config ../configs/db_test.ini ../configs/db_test_complex.ini")

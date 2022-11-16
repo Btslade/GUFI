@@ -65,6 +65,7 @@
 import os
 import sys
 import unittest
+import copy
 
 # Add performance package to system path
 root = "@CMAKE_BINARY_DIR@" # this will be root when merged with master
@@ -101,63 +102,63 @@ class TestHashingFunctions(unittest.TestCase):
 
     def test_hash_machine_config(self):
         # ensure hash value generated is consistent
-        global MACHINE_ARGS  # wont recognize MACHINE_ARGS without global
-        parser = mh.parse_arguments(MACHINE_ARGS)
+        machine_args = copy.deepcopy(MACHINE_ARGS)  # wont recognize MACHINE_ARGS without global
+        parser = mh.parse_arguments(machine_args)
         self.assertEqual(MACHINE_HASH, hf.hash_machine_config(parser))
 
         # ensure notes and non-essential arguments don't affect the hash
-        MACHINE_ARGS += ["--sd_notes", "SSD with 1TB of free space",
+        machine_args += ["--sd_notes", "SSD with 1TB of free space",
                          "--notes", "These are notes",
                          "--database", "performance.db",
                          "--table", "machine_table"]
-        parser = mh.parse_arguments(MACHINE_ARGS)
+        parser = mh.parse_arguments(machine_args)
         self.assertEqual(MACHINE_HASH, hf.hash_machine_config(parser))
 
         # ensure that small deviations result in a non match
-        MACHINE_ARGS[3] = "Machine 1 "  # extra space
-        parser = mh.parse_arguments(MACHINE_ARGS)
+        machine_args[3] = "Machine 1 "  # extra space
+        parser = mh.parse_arguments(machine_args)
         self.assertNotEqual(MACHINE_HASH, hf.hash_machine_config(parser))
 
     def test_hash_gufi_command(self):
         # ensure hash value generated is consistent
-        global GUFI_ARGS
-        parser = gh.parse_arguments(GUFI_ARGS)
+        gufi_args = copy.deepcopy(GUFI_ARGS)
+        parser = gh.parse_arguments(gufi_args)
         self.assertEqual(GUFI_COMMAND_HASH, hf.hash_gufi_command(parser))
 
         # ensure notes and non-essential arguments don't affect the hash
-        GUFI_ARGS += ["--notes", "These are notes",
+        gufi_args += ["--notes", "These are notes",
                       "--database", "performance.db",
                       "--table", "gufi_command"]
-        parser = gh.parse_arguments(GUFI_ARGS)
+        parser = gh.parse_arguments(gufi_args)
         self.assertEqual(GUFI_COMMAND_HASH, hf.hash_gufi_command(parser))
 
         # ensure that small deviations result in a non match
-        GUFI_ARGS[3] = "gufi_query "  # extra space
-        parser = gh.parse_arguments(GUFI_ARGS)
+        gufi_args[3] = "gufi_query "  # extra space
+        parser = gh.parse_arguments(gufi_args)
         self.assertNotEqual(GUFI_COMMAND_HASH, hf.hash_gufi_command(parser))
 
         # ensure providing addditional gufi command flags results in a different hash
-        GUFI_ARGS[3] = "gufi_query"  # set back to default value from previous test
-        GUFI_ARGS += ["-a"]
-        parser = gh.parse_arguments(GUFI_ARGS)
+        gufi_args[3] = "gufi_query"  # set back to default value from previous test
+        gufi_args += ["-a"]
+        parser = gh.parse_arguments(gufi_args)
         self.assertNotEqual(GUFI_COMMAND_HASH, hf.hash_gufi_command(parser))
 
     def test_hash_all_values(self):
         # ensure hash value generated is consistent
-        global FULL_ARGS
-        parser = fh.parse_arguments(FULL_ARGS)
+        full_args = copy.deepcopy(FULL_ARGS)
+        parser = fh.parse_arguments(full_args)
         self.assertEqual(FULL_HASH, hf.hash_all_values(parser))
 
         # ensure notes and non-essential arguments don't affect the hash
-        FULL_ARGS += ["--notes", "These are notes",
+        full_args += ["--notes", "These are notes",
                       "--override", "override.db",
                       "--table", "full"]
-        parser = fh.parse_arguments(FULL_ARGS)
+        parser = fh.parse_arguments(full_args)
         self.assertEqual(FULL_HASH, hf.hash_all_values(parser))
 
         # ensure that small deviations result in a non match
-        FULL_ARGS[3] = "edfad81a97df44c1bbd5ea598c8d4112 "  # Extra Space
-        parser = fh.parse_arguments(FULL_ARGS)
+        full_args[3] = "edfad81a97df44c1bbd5ea598c8d4112 "  # Extra Space
+        parser = fh.parse_arguments(full_args)
         self.assertNotEqual(FULL_HASH, hf.hash_all_values(parser))
 
 if __name__ == '__main__':

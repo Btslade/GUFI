@@ -62,11 +62,9 @@
 
 
 '''Collection of functions to handle database management '''
-import argparse
 import os
 import sqlite3
 import sys
-
 
 import performance_pkg.extraction_functions as ef
 
@@ -132,39 +130,8 @@ def check_if_database_exists(database: str,
         print(f"'{database}' does not exist!!!\nCreate using: {util}")
         sys.exit()
 
-def create_database(con: sqlite3.Connection,
-                    args: argparse.Namespace,
-                    database: str):
-    '''
-    Creates a database based on user arguments
-
-    ...
-
-    Inputs
-    ------
-    con : sqlite3.Connection
-        connections to sqlite3 database
-    args : Namespace
-        arguments provided by user at command line
-    db : str
-        string detailing what kind of db to create
-
-    Returns
-    -------
-    None
-    '''
-    if database == HASH_DB:
-        con.execute(f"CREATE TABLE {args.machine_table} ({MACHINE_COLUMNS}, PRIMARY KEY (hash));")
-        con.execute(f"CREATE TABLE {args.gufi_table} ({GUFI_COMMAND_COLUMNS}, PRIMARY KEY (hash));")
-        con.execute(f"CREATE TABLE {args.full_table} ({FULL_HASH_COLUMNS}, "
-                    f"PRIMARY KEY ({COMBINED_HASH_COL}));")
-    if database == CUMULATIVE_DB:
-        create_times_table(con, ef.GUFI_QUERY_COLUMNS, args.table)
-    con.commit()
-
-def create_times_table(con: sqlite3.Connection,
-                       columns: list,
-                       table_name: str):
+def create_cumulative_times_table(con: sqlite3.Connection,
+                                  table_name: str):
     '''
     Create a table to store cumulative times gathered
 
@@ -174,8 +141,6 @@ def create_times_table(con: sqlite3.Connection,
     ------
     con : sqlite3.Connection
         Connection to database to add the full hash table to
-    columns : list
-        list of columns that will make up the table
     table_name : str
         What to name the cumulative times table in the database
 
@@ -184,7 +149,7 @@ def create_times_table(con: sqlite3.Connection,
     None
     '''
     create_table_list = []
-    for column_name, column_type in columns:
+    for column_name, column_type in ef.GUFI_QUERY_COLUMNS:
         sqlite_column_type = ef.TYPE_TO_SQLITE[column_type]
         create_table_list += [f"'{column_name}' {sqlite_column_type}"]
     create_table_str = ", ".join(create_table_list)

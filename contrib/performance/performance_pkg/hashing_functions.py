@@ -61,9 +61,8 @@
 
 
 
-'''Functions to assist in hashing and inserting intot ables based on hashes '''
+'''Functions to assist in hashing and inserting intot ables based on hashes'''
 import hashlib
-
 
 Hashes = {
     "md5": hashlib.md5,
@@ -78,7 +77,6 @@ FULL_HASH_TABLE = "full_hash"
 MACHINE_HASH_TABLE = "machine"
 GUFI_COMMAND_TABLE = "gufi_command"
 HASH_DATABASE_FILE = "performance_configurations.db"
-
 
 def hash_machine_config(args):
     '''
