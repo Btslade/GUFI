@@ -116,7 +116,7 @@ def parse_arguments(argv: list = None):
     parser.add_argument("--hash_type",
                         default="md5",
                         dest="hash_type",
-                        choices=hf.Hashes.keys(),
+                        choices=hf.HASHES.keys(),
                         help="Hashing mehtods available to use")
     parser.add_argument("--gufi",
                         dest="gufi_command",

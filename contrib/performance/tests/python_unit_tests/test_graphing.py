@@ -61,32 +61,96 @@
 
 
 
+'''tests functions in performance/graphing.py'''
+# pylint: disable=import-error, invalid-name, wrong-import-position
 import os
 import sys
+import unittest
+import sqlite3
 
 # Add performance package to system path
-root = "@CMAKE_BINARY_DIR@" # will eventually be this
+root = "@CMAKE_BINARY_DIR@" # this will be root when merged with master
 root = "/home/braeden/Desktop/work/gufi/my_fork/GUFI"
-performance_packages = os.path.join(root, "contrib/performance/performance_pkg")
-sys.path.insert(0, performance_packages)
+performance = os.path.join(root, "contrib/performance/")
+sys.path.insert(0, performance)
 
-from python_unit_tests import test_hash_functions as thf
-from performance_pkg import extraction_functions as ef
+import graphing as g
+import performance_pkg.commit_object as co
+import performance_pkg.database_functions as db
+import performance_pkg.extraction_functions as ef
 
-os.system("python3 ../create_hash_database.py")
-argument_str = ''
-for i in range(0, len(thf.FULL_ARGS), 2) : argument_str += f'{thf.FULL_ARGS[i]} "{thf.FULL_ARGS[i+1]}" '
-argument_str = argument_str.split('\n')[0]
-full_hash = ef.run_get_stdout(f"python3 ../full_command_hash.py {argument_str}").rstrip()
-os.system(f"python3 ../create_cumulative_times_database.py --database {full_hash}.db")
+COMMIT = "commit to use"
+RAW_VALUES = (1,2,3,4,5)
+RAW_MIN = 1
+RAW_MAX = 5
+RAW_AVERAGE = 3
+RAW_AVG_MIN_DIF = 2
+RAW_AVG_MAX_DIF = 2
 
-#https://www.geeksforgeeks.org/python-convert-a-list-to-dictionary
-gufi_dict = {thf.GUFI_ARGS[i]: thf.GUFI_ARGS[i+1] for i in range(0, len(thf.GUFI_ARGS), 2)}
-extraction_str = f'../../../build/src/{gufi_dict["--gufi"]} ' +\
-                 f'-S "{gufi_dict["-S"]}" ' +\
-                 f'-E "{gufi_dict["-E"]}" ' +\
-                 f'../{gufi_dict["--tree"]} ' +\
-                 f'2>&1 >/dev/null | python3 ../extraction.py '+\
-                 f'--combined_hash {full_hash}'
-for i in range(5): os.system(extraction_str)
-os.system(f"python3 ../graphing.py --database {full_hash}.db --config ../configs/db_test.ini ../configs/db_test_complex.ini")
+def setup_database(con):
+    db.create_cumulative_times_table(con, db.CUMULATIVE_TABLE)
+    for i in range(5):
+        cols = []
+        values = []
+        for column in ef.GUFI_QUERY_COLUMNS:
+            cols += [column[0]]
+            values += [str(i+1)]
+        values[0] = COMMIT
+        values[1] = "branch"
+        cols = ", ".join("'" + event + "'" for event in cols)
+        values = ", ".join("'" + value + "'" for value in values)
+        con.execute(f"INSERT INTO {db.CUMULATIVE_TABLE} ( {cols} ) VALUES ( {values} );")
+
+class Commit(co.CommitInformation):
+
+    def __init__(self):
+        super().__init__()
+
+    # https://igeorgiev.eu/python/tdd/python-unittest-assert-custom-objects-are-equal/
+    def __eq__(self, other):
+        '''Check if self equals another CommitInformation Object'''
+        return self.xs_to_plot == other.xs_to_plot and \
+               self.ys_to_plot == other.ys_to_plot and \
+               self.lower_error_bar_range == other.lower_error_bar_range and \
+               self.upper_error_bar_range == other.upper_error_bar_range and \
+               self.lower_annotation == other.lower_annotation and \
+               self.upper_annotation == other.upper_annotation
+
+    def __repr__(self):
+        return f"Commit({self.xs_to_plot},{self.ys_to_plot},{self.lower_error_bar_range}" \
+               f"{self.upper_error_bar_range},{self.lower_annotation}{self.upper_annotation})"
+
+class TestGraphing(unittest.TestCase):
+
+    con = sqlite3.connect(":memory:")
+
+    def test_set_hash_len(self):
+        hash = "abcdef123456"
+        hash_len = 6
+        self.assertEqual("abcdef", g.set_hash_len(hash, hash_len))
+        self.assertEqual("123456", g.set_hash_len(hash, -hash_len))
+
+    def test_gather_raw_commit_data(self):
+        col = "Total Thread Time (not including main)"
+        setup_database(self.con)
+        self.assertEqual(RAW_VALUES, g.gather_raw_commit_data(col, db.CUMULATIVE_TABLE,
+                                                            COMMIT, self.con))
+
+    def test_process_raw_data(self):
+        commit_len = 6
+
+        commit_data_expected = Commit()
+        commit_data_expected.xs_to_plot.append(COMMIT[:commit_len])
+        commit_data_expected.ys_to_plot.append(RAW_AVERAGE)
+        commit_data_expected.lower_error_bar_range.append(RAW_AVG_MIN_DIF)
+        commit_data_expected.upper_error_bar_range.append(RAW_AVG_MAX_DIF)
+        commit_data_expected.lower_annotation.append(RAW_MIN)
+        commit_data_expected.upper_annotation.append(RAW_MAX)
+
+        commit_data = Commit()
+
+        g.process_raw_data(commit_data, RAW_VALUES, COMMIT, commit_len)
+        self.assertEqual(commit_data_expected, commit_data)
+
+if __name__ == "__main__":
+    unittest.main()

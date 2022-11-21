@@ -104,6 +104,5 @@ if __name__ == '__main__':
         # if gufi_hash came from gufi_query
         ef.gufi_query(data_con, sys.stdin, args.table)
         data_con.commit()
-
     finally:
         data_con.close()

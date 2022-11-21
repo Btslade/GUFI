@@ -117,7 +117,7 @@ def parse_arguments(argv: list = None):
                         help="Database file to save this configuration to")
     parser.add_argument("--hash_type",
                         default="md5",
-                        choices=hf.Hashes.keys(),
+                        choices=hf.HASHES.keys(),
                         metavar="hash_function",
                         help="Hashing method to use")
     parser.add_argument("--override",
@@ -144,7 +144,7 @@ def parse_arguments(argv: list = None):
 if __name__ == "__main__":
     args = parse_arguments()
     db.check_if_database_exists(args.hashdb, db.HASH_DB)
-    
+
     if args.override:
         combined_hash = args.override
     else:

@@ -61,11 +61,12 @@
 
 
 
+'''tests functions in performance_pkg/hashing_functions.py'''
 # pylint: disable=import-error, invalid-name, wrong-import-position
+import copy
 import os
 import sys
 import unittest
-import copy
 
 # Add performance package to system path
 root = "@CMAKE_BINARY_DIR@" # this will be root when merged with master
@@ -73,14 +74,24 @@ root = "/home/braeden/Desktop/work/gufi/my_fork/GUFI"
 performance_packages = os.path.join(root, "contrib/performance/")
 sys.path.insert(0, performance_packages)
 
+import full_command_hash as fh
+import gufi_command_hash as gh
 import performance_pkg.hashing_functions as hf
 import machine_hash as mh
-import gufi_command_hash as gh
-import full_command_hash as fh
 
 FULL_HASH = "4d5d6d6df57439fe688c5e2bda38c8ef"
 GUFI_COMMAND_HASH = "c66ed7dfb8afe717fba57d56cfb62902"
 MACHINE_HASH = "edfad81a97df44c1bbd5ea598c8d4112"
+
+FULL_ARGS = ["--hash_type", "md5",
+             "--machine", MACHINE_HASH,
+             "--gufi", GUFI_COMMAND_HASH]
+
+GUFI_DICT = {"--hash_type": "md5",
+             "--gufi": "gufi_query",
+             "-S": "SELECT * FROM summary",
+             "-E": "SELECT * FROM pentries",
+             "--tree": "tree/Desktop"}
 
 MACHINE_ARGS = ["--hash_type", "md5",
                 "--machine", "Machine 1",
@@ -88,15 +99,6 @@ MACHINE_ARGS = ["--hash_type", "md5",
                 "--cores", "100",
                 "--ram", "170GB",
                 "--storage", "SSD"]
-GUFI_ARGS = ["--hash_type", "md5",
-             "--gufi", "gufi_query",
-             "-S", "SELECT * FROM summary",
-             "-E", "SELECT * FROM pentries",
-             "--tree", "tree/Desktop"]
-
-FULL_ARGS = ["--hash_type", "md5",
-             "--machine", MACHINE_HASH,
-             "--gufi", GUFI_COMMAND_HASH]
 
 class TestHashingFunctions(unittest.TestCase):
 
@@ -121,7 +123,10 @@ class TestHashingFunctions(unittest.TestCase):
 
     def test_hash_gufi_command(self):
         # ensure hash value generated is consistent
-        gufi_args = copy.deepcopy(GUFI_ARGS)
+        gufi_args = []
+        for key, val in GUFI_DICT.items():
+            gufi_args.append(key)
+            gufi_args.append(val)
         parser = gh.parse_arguments(gufi_args)
         self.assertEqual(GUFI_COMMAND_HASH, hf.hash_gufi_command(parser))
 
@@ -157,7 +162,7 @@ class TestHashingFunctions(unittest.TestCase):
         self.assertEqual(FULL_HASH, hf.hash_all_values(parser))
 
         # ensure that small deviations result in a non match
-        full_args[3] = "edfad81a97df44c1bbd5ea598c8d4112 "  # Extra Space
+        full_args[3] = f"{MACHINE_HASH} "  # Extra Space
         parser = fh.parse_arguments(full_args)
         self.assertNotEqual(FULL_HASH, hf.hash_all_values(parser))
 

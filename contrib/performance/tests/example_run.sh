@@ -1,4 +1,4 @@
-#!/usr/bin/env @PYTHON_INTERPRETER@
+#!/usr/bin/env bash
 # This file is part of GUFI, which is part of MarFS, which is released
 # under the BSD license.
 #
@@ -61,99 +61,19 @@
 
 
 
-'''Collection of methods/functions for reading and storing data from a config file'''
-from configparser import ConfigParser
+python3 ../create_hash_database.py
+export PYTHONPATH="${PYTHONPATH}:/home/braeden/Desktop/work/gufi/my_fork/GUFI/contrib/performance/tests/python_unit_tests"
+full_hash=$(python3 -c "import test_hash_functions as thf; print(thf.FULL_HASH)")
+python3 ../create_cumulative_times_database.py --database "${full_hash}".db
+gufi=$(python3 -c 'import test_hash_functions as thf; print(thf.GUFI_DICT["--gufi"])')
+S=$(python3 -c 'import test_hash_functions as thf; print(thf.GUFI_DICT["-S"])')
+E=$(python3 -c 'import test_hash_functions as thf; print(thf.GUFI_DICT["-E"])')
+tree=$(python3 -c 'import test_hash_functions as thf; print(thf.GUFI_DICT["--tree"])')
 
-DATA = "data"
-PATH_TO_SAVE_TO = "path_to_save_to"
-COMMIT_LIST = "commit_list"
+#run this to test error bars
+for (( i=0; i<5; i++ ))
+do
+    ../../../build/src/"${gufi}" -S "${S}" -E "${E}" ../"${tree}" 2>&1 >/dev/null | python3 ../extraction.py --combined_hash "${full_hash}"
+done
 
-BASIC_ATTRIBUTES = "basic_attributes"
-COLUMNS_TO_PLOT = "columns_to_plot"
-GRAPH_TITLE = "graph_title"
-DIMENSIONS = "dimensions"
-
-LINE = "line"
-LINE_COLORS = "line_colors"
-LINE_TYPES = "line_types"
-LINE_MARKERS = "line_markers"
-
-AXES = "axes"
-X_LABEL = "x_label"
-Y_LABEL = "y_label"
-Y_RANGE = "y_range"
-COMMIT_HASH_LEN = "commit_hash_len"
-
-ANNOTATIONS = "annotations"
-SHOW_ANNOTATIONS = "show_annotaions"
-PRECISION_POINTS = "precision_points"
-OFFSET = "offset"
-TEXT_COLORS = "text_colors"
-DEFAULT_TEXT_COLOR = "default_text_color"
-
-ERROR_BAR = "error_bar"
-SHOW_ERROR_BAR = "show_error_bar"
-CAP_SIZE = "cap_size"
-MIN_MAX_ANNOTATION = "min_max_annotation"
-EB_PRECISION_POINTS = "eb_precision_points"
-MIN_COLORS = "min_colors"
-MAX_COLORS = "max_colors"
-
-def get_key_value(parser: ConfigParser,
-                  section: str,
-                  key: str,
-                  handler: list):
-    '''
-    Gets key value from config file, uses a default value if key cannot be found
-
-    ...
-
-    Inputs
-    ------
-    parser : ConfigParser
-        parser to read data read from a config file
-    section : str
-        Section from a config file
-    key : str
-        key from a config file
-    handler : list
-        list containing the data type and default value
-    Returns
-    -------
-    key value from config file
-    '''
-    if handler[0] == str:
-        key_value = parser.get(section,
-                               key,
-                               fallback=handler[1])
-    if handler[0] == int:
-        key_value = parser.getint(section,
-                                  key,
-                                  fallback=handler[1])
-    if handler[0] == bool:
-        key_value = parser.getboolean(section,
-                                      key,
-                                      fallback=handler[1])
-    if handler[0] == list:
-        key_value = parse_config_list(parser.get(section,
-                                                 key,
-                                                 fallback=handler[1]))
-    return key_value
-
-def parse_config_list(line):
-    '''
-    parses config entries that are lists
-
-    ...
-
-    Inputs
-    ------
-    line : str
-        line pulled from config file
-
-    Returns
-    -------
-    line values in list format
-    '''
-    entries = [item.strip() for item in line.split(',')]
-    return [item.replace('"', '') for item in entries]
+python3 ../graphing.py --database "${full_hash}".db --config ../configs/db_test.ini ../configs/db_test_complex.ini

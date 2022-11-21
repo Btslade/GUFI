@@ -63,14 +63,10 @@
 
 # pylint: disable=too-many-arguments
 '''Collection of functions to generate graph'''
-import matplotlib.pyplot as plt
-
-from matplotlib import axes
 from configparser import ConfigParser
-
+from matplotlib import axes
 
 from performance_pkg import config_functions as cf
-
 
 def add_annotations(x_vals: list,
                     y_vals: list,
@@ -119,60 +115,6 @@ def add_annotations(x_vals: list,
     if not error_bar:
         text_color.pop(0)
 
-def set_hash_len(hash: list,
-                 hash_len: int):
-    '''
-    sets the length of the hash label on the x axis of the graph
-
-    ...
-
-    Inputs
-    ------
-    x_list : list
-        list of hashes to go through and shorten
-    x_len : int
-        how many characters long to plot the hash on the graph
-
-    Returns
-    -------
-    x_list : list
-        list of hashes shortned to length (xlen) provided by user
-    '''
-    if hash_len == 0:
-        return hash
-    if hash_len < 0:
-        return hash[hash_len:]  # return the last 'xlen' characters of hash
-    return hash[:hash_len]  # return the first 'xlen' characters of hash
-
-def line_integrety_check(line_colors: list,
-                         line_types: list,
-                         markers: list):
-    '''
-    ensure line will always have a color, type, and marker by adding default
-    values when empty
-
-    ...
-
-    Inputs
-    ------
-    line_colors : list
-        list of line colors
-    line_types : list
-        list of line types
-    line_markers : list
-        list of line markers
-    Returns
-    -------
-    None
-    '''
-    colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
-    if len(line_colors) == 0:
-        line_colors.extend(colors)
-    if len(line_types) == 0:
-        line_types.append("solid")
-    if len(markers) == 0:
-        markers.append("o")
-
 def add_annotations_to_graph(parser: ConfigParser,
                              min_colors: list,
                              max_colors: list,
@@ -205,34 +147,47 @@ def add_annotations_to_graph(parser: ConfigParser,
     -------
     None
     '''
-    if cf.get_key_value(parser, cf.ANNOTATIONS, cf.SHOW_ANNOTATIONS):
+
+    min_max_annotation = cf.get_key_value(parser, cf.ERROR_BAR,
+                                          cf.MIN_MAX_ANNOTATION, [bool, True])
+    show_error_bar = cf.get_key_value(parser, cf.ERROR_BAR,
+                                      cf.SHOW_ERROR_BAR, [bool, True])
+    annotation_offset = cf.get_key_value(parser, cf.ANNOTATIONS,
+                                         cf.OFFSET, [int, 5])
+    annotation_precision_points = cf.get_key_value(parser, cf.ANNOTATIONS,
+                                                   cf.PRECISION_POINTS, [int, 2])
+    default_text_color = cf.get_key_value(parser, cf.ANNOTATIONS,
+                                          cf.DEFAULT_TEXT_COLOR, [str, "orange"])
+    error_bar_precision_points = cf.get_key_value(parser, cf.ERROR_BAR,
+                                                  cf.PRECISION_POINTS, [int, 2])
+    show_error_bar = cf.get_key_value(parser, cf.ANNOTATIONS,
+                                      cf.SHOW_ANNOTATIONS, [bool, True])
+
+    if show_error_bar:
         add_annotations(xs_to_plot,
                         ys_to_plot,
                         text_colors,
-                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.DEFAULT_TEXT_COLOR),
+                        default_text_color,
                         ax,
-                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.OFFSET),
-                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.PRECISION_POINTS))
-    
-    min_max_annotation = cf.get_key_value(parser, cf.ERROR_BAR, cf.MIN_MAX_ANNOTATION)
-    show_error_bar = cf.get_key_value(parser, cf.ERROR_BAR, cf.SHOW_ERROR_BAR)
-    
+                        annotation_offset,
+                        annotation_precision_points)
+
     if min_max_annotation and show_error_bar:
         add_annotations(xs_to_plot,
                         lower_annotation,
                         min_colors,
                         min_colors[0],
                         ax,
-                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.OFFSET),
-                        cf.get_key_value(parser, cf.ERROR_BAR, cf.PRECISION_POINTS),
+                        annotation_offset,
+                        error_bar_precision_points,
                         True)
         add_annotations(xs_to_plot,
                         upper_annotation,
                         max_colors,
                         max_colors[0],
                         ax,
-                        cf.get_key_value(parser, cf.ANNOTATIONS, cf.OFFSET),
-                        cf.get_key_value(parser, cf.ERROR_BAR, cf.PRECISION_POINTS),
+                        annotation_offset,
+                        error_bar_precision_points,
                         True)
 
 def graph_labels(ax: axes.Axes,
@@ -255,9 +210,10 @@ def graph_labels(ax: axes.Axes,
     -------
     None
     '''
-    ax.legend(cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.COLUMNS_TO_PLOT),
+    ax.legend(cf.get_key_value(parser, cf.BASIC_ATTRIBUTES,
+                               cf.COLUMNS_TO_PLOT, [list, "Real time (main)"]),
               bbox_to_anchor=(1, 1),
               loc="upper left")
-    ax.set_title(cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.GRAPH_TITLE))
-    ax.set_xlabel(cf.get_key_value(parser, cf.AXES, cf.X_LABEL))
-    ax.set_ylabel(cf.get_key_value(parser, cf.AXES, cf.Y_LABEL))
+    ax.set_title(cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.GRAPH_TITLE, [str, "Graph"]))
+    ax.set_xlabel(cf.get_key_value(parser, cf.AXES, cf.X_LABEL, [str, "Commit Hash"]))
+    ax.set_ylabel(cf.get_key_value(parser, cf.AXES, cf.Y_LABEL, [str, "Time (seconds)"]))

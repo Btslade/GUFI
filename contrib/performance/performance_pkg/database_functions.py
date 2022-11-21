@@ -61,7 +61,7 @@
 
 
 
-'''Collection of functions to handle database management '''
+'''Collection of functions to handle database management'''
 import os
 import sqlite3
 import sys

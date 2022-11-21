@@ -70,3 +70,4 @@ class CommitInformation:
         self.upper_error_bar_range = []
         self.lower_annotation = []
         self.upper_annotation = []
+        

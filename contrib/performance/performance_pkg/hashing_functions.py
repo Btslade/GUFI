@@ -64,7 +64,7 @@
 '''Functions to assist in hashing and inserting intot ables based on hashes'''
 import hashlib
 
-Hashes = {
+HASHES = {
     "md5": hashlib.md5,
     "sha1": hashlib.sha1,
     "sha224": hashlib.sha224,
@@ -98,7 +98,7 @@ def hash_machine_config(args):
              {args.machine_name} {args.cpu} {args.cores_available}
              {args.ram} {args.storage_device}
               '''
-    return Hashes[args.hash_type](string.encode()).hexdigest()
+    return HASHES[args.hash_type](string.encode()).hexdigest()
 
 def hash_gufi_command(args):
     '''
@@ -120,7 +120,7 @@ def hash_gufi_command(args):
               {args.gufi_command} {args.a} {args.n} {args.I} {args.S}
               {args.E} {args.J} {args.K} {args.G} {args.B} {args.tree}
               '''
-    return Hashes[args.hash_type](string.encode()).hexdigest()
+    return HASHES[args.hash_type](string.encode()).hexdigest()
 
 def hash_all_values(args):
     '''
@@ -139,4 +139,4 @@ def hash_all_values(args):
         hashed machine configuration
     '''
     string = f"{args.gufi_hash} {args.machine_hash}"
-    return Hashes[args.hash_type](string.encode()).hexdigest()
+    return HASHES[args.hash_type](string.encode()).hexdigest()

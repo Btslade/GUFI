@@ -112,11 +112,34 @@ def get_hashes(identifier: str):
         result = ef.run_get_stdout(f"git rev-parse {identifier}")
     return result.split('\n')[-2::-1]  # remove last empty line and reverse list
 
+def set_hash_len(hash: str,
+                 hash_len: int):
+    '''
+    sets the length of the hash label on the x axis of the graph
+
+    ...
+
+    Inputs
+    ------
+    hash : str
+        list of hashes to go through and shorten
+    hash_len : int
+        how many characters long to plot the hash on the graph
+
+    Returns
+    -------
+    hash : str
+        shortened hash len
+    '''
+    if hash_len == 0:
+        return hash
+    if hash_len < 0:
+        return hash[hash_len:]  # return the last 'hash_len' characters of hash
+    return hash[:hash_len]  # return the first 'hash_len' characters of hash
 
 def identifiers_to_hashes(config_identifiers: list):
     '''
     extract hashes and ranges of hashes based on identifiers provided by user
-
     ...
 
     Inputs
@@ -158,8 +181,8 @@ def gather_raw_commit_data(col: str,
     -------
     None
     '''
-    cur = con.execute(f'SELECT "{col}" ' +\
-                      f'FROM {table_name} ' +\
+    cur = con.execute(f'SELECT "{col}" ' +
+                      f'FROM {table_name} ' +
                       f'WHERE "commit" = "{commit}"'
                       )
     rows = cur.fetchall()
@@ -172,7 +195,7 @@ def gather_raw_commit_data(col: str,
 def process_raw_data(commit_data: co.CommitInformation,
                      raw_values: list,
                      commit: str,
-                     hash_len: str):
+                     hash_len: int):
     '''
     process data gathered into a usable and readable format
 
@@ -186,15 +209,15 @@ def process_raw_data(commit_data: co.CommitInformation,
         values to process
     commit : str
         commit to plot on x axis
-    hash_len : str
-        how many characters of the commit to write out on x axis (will be cast to int)
+    hash_len : int
+        how many characters of the commit to write out on x axis
 
     Returns
     -------
     None
     '''
     y_val = sum(raw_values) / len(raw_values)
-    commit_data.xs_to_plot.append(gf.set_hash_len(commit, hash_len))
+    commit_data.xs_to_plot.append(set_hash_len(commit, hash_len))
     commit_data.ys_to_plot.append(y_val)
     commit_data.lower_error_bar_range.append(y_val - min(raw_values))
     commit_data.upper_error_bar_range.append(max(raw_values) - y_val)
@@ -207,17 +230,33 @@ if __name__ == "__main__":
         parser = ConfigParser(interpolation=ExtendedInterpolation())
         parser.read(filename)  # user will provide this at command line
         con = sqlite3.connect(args.database)
-        parsed_commits = identifiers_to_hashes(cf.get_key_value(parser, cf.DATA, cf.COMMIT_LIST))
-        dimensions = [int(element) for element in cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.DIMENSIONS)]
+        parsed_commits = identifiers_to_hashes(cf.get_key_value(parser,
+                                                                cf.DATA,
+                                                                cf.COMMIT_LIST,
+                                                                [list, "HEAD~10..HEAD"]))
+        dimensions = [int(element) for element in cf.get_key_value(parser, cf.BASIC_ATTRIBUTES,
+                                                                   cf.DIMENSIONS, [list, "12,6"])]
         fig, ax = plt.subplots(figsize=tuple(dimensions),
                                facecolor="white")  # needs subplot to get access to figure and axes
-        line_colors = cf.get_key_value(parser, cf.LINE, cf.LINE_COLORS)
-        line_types = cf.get_key_value(parser, cf.LINE, cf.LINE_TYPES)
-        markers = cf.get_key_value(parser, cf.LINE, cf.MARKERS)
-        min_colors = cf.get_key_value(parser, cf.ERROR_BAR, cf.MIN_COLORS)
-        max_colors = cf.get_key_value(parser, cf.ERROR_BAR, cf.MAX_COLORS)
-        text_colors = cf.get_key_value(parser, cf.ANNOTATIONS, cf.TEXT_COLORS)
-        for col in cf.get_key_value(parser, cf.BASIC_ATTRIBUTES, cf.COLUMNS_TO_PLOT):
+        columns_to_plot = cf.get_key_value(parser, cf.BASIC_ATTRIBUTES,
+                                           cf.COLUMNS_TO_PLOT, [list, "Real time (main)"])
+        colors = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+        line_colors = cf.get_key_value(parser,
+                                       cf.LINE,
+                                       cf.LINE_COLORS,
+                                       [list, ["green"]]) + (colors * len(columns_to_plot))
+        line_types = cf.get_key_value(parser,
+                                      cf.LINE,
+                                      cf.LINE_TYPES,
+                                      [list, ["solid"]]) + (["solid"] * len(columns_to_plot))
+        line_markers = cf.get_key_value(parser,
+                                        cf.LINE,
+                                        cf.LINE_MARKERS,
+                                        [list, ["o"]]) + (["o"] * len(columns_to_plot))
+        min_colors = cf.get_key_value(parser, cf.ERROR_BAR, cf.MIN_COLORS, [list, ["green"]])
+        max_colors = cf.get_key_value(parser, cf.ERROR_BAR, cf.MAX_COLORS, [list, ["red"]])
+        text_colors = cf.get_key_value(parser, cf.ANNOTATIONS, cf.TEXT_COLORS, [list, ["orange"]])
+        for col in columns_to_plot:
             commit_data = co.CommitInformation()
             for commit in parsed_commits:
                 raw_values = gather_raw_commit_data(col, args.table,
@@ -225,42 +264,42 @@ if __name__ == "__main__":
                 if len(raw_values) == 0:
                     continue
                 process_raw_data(commit_data, raw_values,
-                                 commit, cf.get_key_value(parser, cf.AXES, cf.COMMIT_HASH_LEN))
-            gf.line_integrety_check(line_colors,
-                                    line_types,
-                                    markers)  # line vals must not be empty
+                                 commit, cf.get_key_value(parser, cf.AXES,
+                                                          cf.COMMIT_HASH_LEN, [int, 6]))
             custom_cycler = (cycler(color=[line_colors[0]]) +
                              cycler(linestyle=[line_types[0]]) +
-                             cycler(marker=[markers[0]]))
+                             cycler(marker=[line_markers[0]]))
 
             line_colors.pop(0)
             line_types.pop(0)
-            markers.pop(0)
+            line_markers.pop(0)
 
             ax.set_prop_cycle(custom_cycler)
 
-            if cf.get_key_value(parser, cf.ERROR_BAR, cf.SHOW_ERROR_BAR):
+            if cf.get_key_value(parser, cf.ERROR_BAR, cf.SHOW_ERROR_BAR, [bool, True]):
                 ax.errorbar(commit_data.xs_to_plot,
                             commit_data.ys_to_plot,
                             yerr=(commit_data.lower_error_bar_range,
                                   commit_data.upper_error_bar_range
                                   ),
-                            capsize=cf.get_key_value(parser, cf.ERROR_BAR, cf.CAP_SIZE))
+                            capsize=cf.get_key_value(parser, cf.ERROR_BAR, cf.CAP_SIZE, [int, 10]))
             else:
                 ax.errorbar(commit_data.xs_to_plot, commit_data.ys_to_plot)
 
             gf.add_annotations_to_graph(parser,
-                                     min_colors,
-                                     max_colors,
-                                     text_colors,
-                                     commit_data.xs_to_plot,
-                                     commit_data.ys_to_plot,
-                                     ax,
-                                     commit_data.lower_annotation,
-                                     commit_data.upper_annotation)
+                                        min_colors,
+                                        max_colors,
+                                        text_colors,
+                                        commit_data.xs_to_plot,
+                                        commit_data.ys_to_plot,
+                                        ax,
+                                        commit_data.lower_annotation,
+                                        commit_data.upper_annotation)
 
-        y_range = cf.get_key_value(parser, cf.AXES, cf.Y_RANGE)
+        y_range = cf.get_key_value(parser, cf.AXES, cf.Y_RANGE, [list, "default"])
         if len(y_range) == 2:  # If user provides custom range
             ax.set_ylim(y_range[0], y_range[1])
         gf.graph_labels(ax, parser)
-        fig.savefig(cf.get_key_value(parser, cf.DATA, cf.PATH_TO_SAVE_TO), bbox_inches="tight")
+        path_to_save_to = cf.get_key_value(parser, cf.DATA,
+                                           cf.PATH_TO_SAVE_TO, [str, "./db_test.png"])
+        fig.savefig(path_to_save_to, bbox_inches="tight")
