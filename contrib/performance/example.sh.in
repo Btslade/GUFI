@@ -29,14 +29,14 @@ cleanup() {
 
 cleanup
 
-# setup configurations
-hashdb.py "${HASHDB}"
+# setup hash database and insert hashes
+setup_hashdb.py "${HASHDB}"
 machine_hash=$(machine_hash.py --database "${HASHDB}")
 gufi_hash=$(gufi_hash.py --database "${HASHDB}" "${GUFI_CMD}" "${DEBUG_NAME}" "${TREE}")
 raw_data_hash=$(raw_data_hash.py --database "${HASHDB}" --override "${OVERRIDE}" "${machine_hash}" "${gufi_hash}")
 
-# setup raw data databases
-raw_data_db.py "${HASHDB}" "${raw_data_hash}" "${RAW_DATA_DB}"
+# setup raw data database
+setup_raw_data_db.py "${HASHDB}" "${raw_data_hash}" "${RAW_DATA_DB}"
 
 for((commit=0; commit<5; commit++))
 do
