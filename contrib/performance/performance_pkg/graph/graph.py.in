@@ -89,11 +89,6 @@ def generate(conf, const_x, y_vals, line_names,    # pylint: disable=too-many-ar
     # unpack the config
     _, output, lines, axes, annotations, error_bar = conf
 
-    # # aliases
-    # commits = [set_hash_len(commit, axes[config.AXES_HASH_LEN])
-    #            for commit in raw_data[config.RAW_DATA_COMMITS]]
-    # columns = raw_data[config.RAW_DATA_COLUMNS]
-
     # plot data
     plt.title(output[config.OUTPUT_GRAPH_TITLE])
     plt.xlabel('Commit') # fixed
