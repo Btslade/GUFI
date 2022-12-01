@@ -124,7 +124,10 @@ def generate(conf, const_x, y_vals, line_names,    # pylint: disable=too-many-ar
                                 annotations[config.ANNOTATIONS_X_OFFSET],
                                 annotations[config.ANNOTATIONS_Y_OFFSET])
 
-        plotline, _, _ = plt.errorbar(const_x, y_curr, label=label, yerr=yerr, ecolor=ecolor)
+        plotline, _, _ = plt.errorbar(const_x, y_curr, label=label,
+                                      yerr=yerr,
+                                      ecolor=ecolor,
+                                      capsize=error_bar[config.ERROR_BAR_CAP_SIZE])
 
         plotline.set_color(color)
         plotline.set_linestyle(style)
