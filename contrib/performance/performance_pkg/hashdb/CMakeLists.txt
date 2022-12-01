@@ -62,7 +62,7 @@
 
 cmake_minimum_required(VERSION 3.1.0)
 
-set(HASHDB_SCHEMA
+set(HASHDB
   __init__.py # needed for python2
 
   # schema
@@ -73,6 +73,6 @@ set(HASHDB_SCHEMA
   utils.py
 )
 
-foreach(SCRIPT ${HASHDB_SCHEMA})
+foreach(SCRIPT ${HASHDB})
   configure_file("${SCRIPT}.in" "${SCRIPT}" @ONLY)
 endforeach()
