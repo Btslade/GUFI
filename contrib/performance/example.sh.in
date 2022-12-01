@@ -6,8 +6,13 @@ export PATH="@CMAKE_CURRENT_BINARY_DIR@:@DEP_INSTALL_PREFIX@/sqlite3/bin:${PATH}
 export LD_LIBRARY_PATH="@DEP_INSTALL_PREFIX@/sqlite3/lib:${LD_LIBRARY_PATH}"
 export PYTHONPATH="@CMAKE_BINARY_DIR@/contrib:@CMAKE_BINARY_DIR@/contrib/performance:@CMAKE_BINARY_DIR@/scripts:${PYTHONPATH}"
 
-HASHDB="configs.db"
+# database containing hashes of machine properties and gufi commands
+HASHDB="hashes.db"
+
+# database containing raw data (gufi_query + cumulative times)
 RAW_DATA_DB="example_raw_data.db"
+
+# config file describing what to graph
 CONFIG_FILE="@CMAKE_CURRENT_BINARY_DIR@/configs/db_test.ini"
 
 GUFI_CMD="gufi_query"
@@ -22,8 +27,6 @@ cleanup() {
     rm -f "$(grep path ${CONFIG_FILE} | awk '{ print $3 }')"
 }
 
-# cleanup before and after running
-trap cleanup EXIT
 cleanup
 
 # setup configurations
