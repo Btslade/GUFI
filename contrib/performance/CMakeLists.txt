@@ -66,11 +66,11 @@ set(SCRIPTS
   # call in this order
 
   # set up
-  hashdb.py            # set up db for all benchmark configs
+  setup_hashdb.py      # set up db for all benchmark configs
   machine_hash.py      # generate machine config hash and add it to the hash db
   gufi_hash.py         # generate gufi command hash and add it to the hash db
   raw_data_hash.py     # generate benchmark config using machine config and gufi command hashes and add it to the hash db
-  raw_data_db.py       # generate the database for storing raw numbers using the gufi command and its known performance metrics
+  setup_raw_data_db.py # generate the database for storing raw numbers using the gufi command and its known performance metrics
 
   # extract
   extract.py           # parse debug output and insert them into the raw data db
@@ -78,7 +78,7 @@ set(SCRIPTS
   # graph
   graph_performance.py # calculate stats on stored data and plot them onto a graph
 
-  example.sh
+  example.sh           # example using scripts listed above
   )
 
 foreach(SCRIPT ${SCRIPTS})
