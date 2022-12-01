@@ -68,12 +68,21 @@ import sys
 from performance_pkg import common
 from performance_pkg.hashdb import machine
 
-def format_value(args, attr, type, hashing): # pylint: disable=redefined-builtin
+def format_for_hash(args, attr, type): # pylint: disable=redefined-builtin
     value = getattr(args, attr)
 
     if value is None:
-        if hashing:
-            return None
+        return None
+
+    if type == str:
+        return '"{0}"'.format(value)
+
+    return str(value)
+
+def format_for_insert(args, attr, type): # pylint: disable=redefined-builtin
+    value = getattr(args, attr)
+
+    if value is None:
         return '""'
 
     if type == str:
@@ -87,7 +96,7 @@ def compute_hash(args):
 
     formatted = ['"{0}" '.format(args.hash_alg)]
     for col, type in machine.TABLE_COLS[1:-1]: # pylint: disable=redefined-builtin
-        val = format_value(args, col, type, True)
+        val = format_for_hash(args, col, type)
         if val is not None:
             formatted += [val]
 
@@ -139,7 +148,7 @@ def run(argv):
 
             cols = ', '.join(col for col, _ in machine.TABLE_COLS)
             vals = '"{0}", '.format(machine_hash) + ', '.join(
-                format_value(args, prop, type, False)
+                format_for_insert(args, prop, type)
                 for prop, type in machine.TABLE_COLS[1:]
             )
             con.execute('INSERT INTO {0} ({1}) VALUES ({2});'.format(
