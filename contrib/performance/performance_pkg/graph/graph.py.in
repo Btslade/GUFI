@@ -80,7 +80,7 @@ def add_annotations(x_vals, y_vals,
 def generate(conf, const_x, y_vals, line_names,    # pylint: disable=too-many-arguments
              y_mins, y_maxs):
     '''
-    ys, line_names, y_mins, and y_maxs should all
+    y_vals, line_names, y_mins, and y_maxs should all
     be lists of lists with the same dimensions
     '''
 
