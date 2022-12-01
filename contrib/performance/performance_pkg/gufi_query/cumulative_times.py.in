@@ -147,7 +147,11 @@ def extract(src, commit, branch):
 
         data.update(process_line(line, ':', 's'))
 
-    # don't check if all expected data is available - check when inserting
+    # check for missing input
+    for col, _ in COLUMNS:
+        if col not in data:
+            raise ValueError('Cumulative times data missing {0}'.format(col))
+
     return data
 
 # insert
