@@ -102,7 +102,7 @@ class TestHashing(unittest.TestCase):
                       '--cores', '0',
                       '--ram', '0',
                       '--storage', '']
-        expected_hash = '2c94c45756bc8dbf6da01be9fce92fba'
+        expected_hash = '58b63f5433e2fa2f054c132e363beaaa'
 
         self.template(machine_hash.parse_args, input_args,
                       machine_hash.compute_hash, expected_hash)
@@ -115,7 +115,7 @@ class TestHashing(unittest.TestCase):
                       'gufi_query',
                       'cumulative-times',
                       'tree']
-        expected_hash = 'e3468efe4891210cd3dabdbcabfde48e'
+        expected_hash = 'b21cc57f0628f8a76c0068c73933c140'
 
         self.template(gufi_hash.parse_args, input_args,
                       gufi_hash.compute_hash, expected_hash)

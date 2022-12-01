@@ -70,11 +70,11 @@ from performance_pkg.hashdb import machine, gufi, raw_data
 # set up tables
 def create_tables(con):
     machine_col_str = ', '.join('{0} {1}'.format(
-        col, common.TYPE_TO_SQLITE[type]) for col, type in machine.TABLE_COLS)
+        name if name else col, common.TYPE_TO_SQLITE[type]) for col, name, type in machine.COLS)
     gufi_col_str = ', '.join('{0} {1}'.format(
-        name if name else col, common.TYPE_TO_SQLITE[type]) for col, name, type in gufi.TABLE_COLS)
+        name if name else col, common.TYPE_TO_SQLITE[type]) for col, name, type in gufi.COLS)
     raw_data_col_str = ', '.join('{0} {1}'.format(
-        name, common.TYPE_TO_SQLITE[type]) for name, type in raw_data.TABLE_COLS)
+        name if name else col, common.TYPE_TO_SQLITE[type]) for col, name, type in raw_data.COLS)
 
     con.execute('CREATE TABLE {0} ({1}, PRIMARY KEY (hash));'.format(
         machine.TABLE_NAME, machine_col_str))
@@ -116,3 +116,31 @@ def get_config(hashdb_name, user_raw_data_hash):
         hashdb.close()
 
     return gufi_cmd, debug_name
+
+def insert(con, args, hash, table_name, cols_required, cols_hashed, cols_not_hashed):
+    '''
+    only insert args/columns that are present rather than insert
+    filler values into the database - let sqlite set the defaults
+
+    args should contains members with the same names as the columns
+    '''
+
+    cols = ['hash']
+    vals = ['"{0}"'.format(hash)]
+
+    # first column of cols_required should aways be hash
+    for col, name, type in cols_required[1:] + cols_hashed + cols_not_hashed:
+        val = getattr(args, col)
+        if val is not None:
+            cols += [name if name else col]
+
+            if type == str:
+                vals += ['"{0}"'.format(val)]
+            else:
+                vals += [str(val)]
+
+    # leave as separate variable for debug
+    sql = 'INSERT INTO {0} ({1}) VALUES ({2});'.format(
+        table_name, ', '.join(cols), ', '.join(vals))
+
+    con.execute(sql)

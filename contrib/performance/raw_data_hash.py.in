@@ -66,7 +66,7 @@ import sqlite3
 import sys
 
 from performance_pkg import common
-from performance_pkg.hashdb import raw_data
+from performance_pkg.hashdb import raw_data, utils as hashdb
 
 def compute_hash(args):
     if args.override:
@@ -116,12 +116,11 @@ def run(argv):
                 con.execute('DELETE FROM {0} WHERE hash == "{1}";'.format(
                     raw_data.TABLE_NAME, raw_data_hash))
             else:
-                cols = ', '.join(col for col, _ in raw_data.TABLE_COLS)
-                vals = '"{0}", '.format(raw_data_hash) + ', '.join(
-                    '"{0}"'.format(getattr(args, col))
-                    for col, _ in raw_data.TABLE_COLS[1:])
-                con.execute('INSERT INTO {0} ({1}) VALUES ({2});'.format(
-                    raw_data.TABLE_NAME, cols, vals))
+                hashdb.insert(con, args, raw_data_hash,
+                              raw_data.TABLE_NAME,
+                              raw_data.COLS_REQUIRED,
+                              raw_data.COLS_HASHED,
+                              raw_data.COLS_NOT_HASHED)
 
             con.commit()
         finally:

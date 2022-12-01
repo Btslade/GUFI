@@ -66,39 +66,17 @@ import sqlite3
 import sys
 
 from performance_pkg import common
-from performance_pkg.hashdb import machine
-
-def format_for_hash(args, attr, type): # pylint: disable=redefined-builtin
-    value = getattr(args, attr)
-
-    if value is None:
-        return None
-
-    if type == str:
-        return '"{0}"'.format(value)
-
-    return str(value)
-
-def format_for_insert(args, attr, type): # pylint: disable=redefined-builtin
-    value = getattr(args, attr)
-
-    if value is None:
-        return '""'
-
-    if type == str:
-        return '"{0}"'.format(value)
-
-    return str(value)
+from performance_pkg.hashdb import machine, utils as hashdb
 
 def compute_hash(args):
     if args.override:
         return args.override
 
-    formatted = ['"{0}" '.format(args.hash_alg)]
-    for col, type in machine.TABLE_COLS[1:-1]: # pylint: disable=redefined-builtin
-        val = format_for_hash(args, col, type)
+    formatted = [args.hash_alg]
+    for col, _, type in machine.COLS_HASHED: # pylint: disable=redefined-builtin
+        val = getattr(args, col)
         if val is not None:
-            formatted += [val]
+            formatted += [str(val)]
 
     return common.hash_config(args.hash_alg, ' '.join(formatted))
 
@@ -145,15 +123,11 @@ def run(argv):
     if args.database:
         try:
             con = sqlite3.connect(args.database)
-
-            cols = ', '.join(col for col, _ in machine.TABLE_COLS)
-            vals = '"{0}", '.format(machine_hash) + ', '.join(
-                format_for_insert(args, prop, type)
-                for prop, type in machine.TABLE_COLS[1:]
-            )
-            con.execute('INSERT INTO {0} ({1}) VALUES ({2});'.format(
-                machine.TABLE_NAME, cols, vals))
-
+            hashdb.insert(con, args, machine_hash,
+                          machine.TABLE_NAME,
+                          machine.COLS_REQUIRED,
+                          machine.COLS_HASHED,
+                          machine.COLS_NOT_HASHED)
             con.commit()
         finally:
             con.close()

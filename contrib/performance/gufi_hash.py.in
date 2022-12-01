@@ -66,15 +66,10 @@ import sqlite3
 import sys
 
 from performance_pkg import common
-from performance_pkg.hashdb import gufi
+from performance_pkg.hashdb import gufi, utils as hashdb
 import gufi_common
 
-def format_for_hash(args, attr, type): # pylint: disable=redefined-builtin
-    value = getattr(args, attr)
-
-    if value is None:
-        return None
-
+def format_for_hash(attr, value, type): # pylint: disable=redefined-builtin
     # pylint: disable=no-else-return
     if type == str:
         return '-{0} "{1}"'.format(attr, value)
@@ -87,32 +82,22 @@ def format_for_hash(args, attr, type): # pylint: disable=redefined-builtin
             return None
     return str(value)
 
-def format_for_insert(args, attr, type): # pylint: disable=redefined-builtin
-    value = getattr(args, attr)
-
-    if value is None:
-        return '""'
-
-    # pylint: disable=no-else-return
-    if type == str:
-        return '"{0}"'.format(value)
-    elif type == bool:
-        return str(int(value))
-    return str(value)
-
 def compute_hash(args):
     if args.override:
         return args.override
 
     formatted = [
-        '"{0}" '.format(args.hash_alg),
-        '"{0}" '.format(args.cmd)
+        args.hash_alg,
+        args.cmd,
     ]
-    for col, _, type in gufi.TABLE_COLS[gufi.COL_FLAG_START:gufi.COL_FLAG_END]: # pylint: disable=redefined-builtin
-        val = format_for_hash(args, col, type)
+    for col, _, type in gufi.COLS_HASHED: # pylint: disable=redefined-builtin
+        val = getattr(args, col)
         if val is not None:
-            formatted += [val]
-    formatted += ['"{0}" '.format(args.tree)]
+            formatted_val = format_for_hash(col, val, type)
+            # check for unset boolean flags
+            if formatted_val is not None:
+                formatted += [formatted_val]
+    formatted += [args.tree]
 
     return common.hash_config(args.hash_alg, ' '.join(formatted))
 
@@ -287,13 +272,11 @@ def run(argv):
     if args.database:
         try:
             con = sqlite3.connect(args.database)
-
-            cols = ', '.join(col_name if col_name else flag
-                             for flag, col_name, _ in gufi.TABLE_COLS)
-            vals = '"{0}", '.format(gufi_hash) + ', '.join(format_for_insert(args, prop, type)
-                                                           for prop, _, type in gufi.TABLE_COLS[1:])
-            con.execute('INSERT INTO {0} ({1}) VALUES ({2});'.format(gufi.TABLE_NAME, cols, vals))
-
+            hashdb.insert(con, args, gufi_hash,
+                          gufi.TABLE_NAME,
+                          gufi.COLS_REQUIRED,
+                          gufi.COLS_HASHED,
+                          gufi.COLS_NOT_HASHED)
             con.commit()
         finally:
             con.close()

@@ -63,8 +63,18 @@
 
 TABLE_NAME = 'raw_data_dbs'
 
-TABLE_COLS = [
-    ['hash',         str],
-    ['machine_hash', str],
-    ['gufi_hash',    str],
+# arg attr, sql column name, column type
+COLS_REQUIRED = [
+    ['hash',         None, str],
 ]
+
+COLS_HASHED = [
+    ['machine_hash', None, str],
+    ['gufi_hash',    None, str],
+]
+
+COLS_NOT_HASHED = [
+    ['extra',        None, str],
+]
+
+COLS = COLS_REQUIRED + COLS_HASHED + COLS_NOT_HASHED
