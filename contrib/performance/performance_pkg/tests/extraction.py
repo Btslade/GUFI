@@ -69,9 +69,8 @@ from performance_pkg.extraction.gufi_query import cumulative_times as gq_ct, cum
 from performance_pkg.extraction.gufi_trace2index import cumulative_times as gt2i_ct
 
 class TestExtraction(unittest.TestCase):
-    def key_value_test(self, module, seperator):
+    def key_value_test(self, module, seperator, columns):
         # create input
-        columns = module.COLUMNS[3:]
         lines = ['{0}{1} {2}'.format(key, seperator, type(i))
                  for i, (key, type) in enumerate(columns)] # pylint: disable=redefined-builtin
 
@@ -80,7 +79,8 @@ class TestExtraction(unittest.TestCase):
         # sort lines to change order lines are received
         parsed = module.extract(['', columns[0][0]] + sorted(lines), None, None)
 
-        self.assertEqual(len(parsed), len(module.COLUMNS))
+        # +3 for id, commit and branch
+        self.assertEqual(len(parsed), len(columns) + 3)
         for i, (key, type) in enumerate(columns):         # pylint: disable=redefined-builtin
             self.assertEqual(parsed[key], str(type(i)))   # pylint: disable=redefined-builtin
 
@@ -89,8 +89,10 @@ class TestExtraction(unittest.TestCase):
             module.extract([], None, None)
 
     def test_gufi_query_cumulative_times(self):
-        self.key_value_test(gq_ct, ':')
-        self.key_value_test(gq_ct, '')
+        self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_1)
+        self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_1)
+        self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_2)
+        self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_2)
 
     def test_gufi_query_cumulative_times_terse(self):
         columns = gq_ctt.COLUMNS[3:]
@@ -110,7 +112,7 @@ class TestExtraction(unittest.TestCase):
             gq_ctt.extract([], None, None)
 
     def test_gufi_trace2index_cumulative_times(self):
-        self.key_value_test(gt2i_ct, ':')
+        self.key_value_test(gt2i_ct, ':', gt2i_ct.COLUMN_FORMAT_1)
 
 class TestCommon(unittest.TestCase):
     def test(self):

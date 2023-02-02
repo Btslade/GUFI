@@ -82,12 +82,20 @@ def format_value(value, type): # pylint: disable=redefined-builtin
         return '"{0}"'.format(value)
     return str(value)
 
+def get_columns_format(parsed, columns):
+    column_format = []
+    for col_type in columns:
+        if col_type[0] in parsed.keys():
+            column_format.append(col_type)
+    return column_format
+
 def insert(con, parsed, table_name, columns):
-    cols = ', '.join('"{0}"'.format(col) for col, _ in columns)
-    vals = ', '.join(format_value(parsed[col], type) for col, type in columns)
+    columns_format = get_columns_format(parsed, columns)
+    cols = ', '.join('"{0}"'.format(col) for col, _ in columns_format)
+    vals = ', '.join(format_value(parsed[col], type) for col, type in columns_format)
     con.execute('INSERT INTO {0} ({1}) VALUES ({2});'.format(table_name, cols, vals))
 
-def cumulative_times_extract(src, commit, branch, columns):
+def cumulative_times_extract(src, commit, branch, db_columns, column_formats):
     # these aren't obtained from running gufi_query
     data = {
         'id'    : None,
@@ -99,9 +107,9 @@ def cumulative_times_extract(src, commit, branch, columns):
     #
     # Column names that are substrings of other column names will be
     # processed last to avoid parsing the longer column name incorrectly
-    sorted_columns = [value[0] for value in columns]
-    sorted_columns.sort(key=len)
-    sorted_columns.reverse()
+    sorted_db_columns = [value[0] for value in db_columns]
+    sorted_db_columns.sort(key=len)
+    sorted_db_columns.reverse()
 
     # parse input
     for line in src:
@@ -109,7 +117,7 @@ def cumulative_times_extract(src, commit, branch, columns):
         if line == '':
             continue
 
-        for value in sorted_columns:
+        for value in sorted_db_columns:
             if value == line[:len(value)]:
                 line = line[len(value):]
                 if line == '':
@@ -122,8 +130,24 @@ def cumulative_times_extract(src, commit, branch, columns):
                 break
 
     # check for missing input
-    for col, _ in columns:
-        if col not in data:
-            raise ValueError('Cumulative times data missing "{0}" on commit {1}'.format(col, commit))
+    column_format_match = False
+    for column_format in column_formats:
+
+        #If match found, break early
+        if column_format_match:
+            break
+
+        if len(column_format) + 3 != len(data):
+            column_format_match = False
+            continue
+
+        for col, _ in column_format:
+            if col not in data:
+                column_format_match = False
+                break
+            column_format_match = True
+
+    if not column_format_match:
+        raise ValueError('Cumulative times data matches no known format on commit {0}'.format(commit))
 
     return data

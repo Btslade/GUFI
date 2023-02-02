@@ -66,11 +66,7 @@ from performance_pkg.extraction import common
 TABLE_NAME = 'cumulative_times'
 
 # ordered cumulative times columns
-COLUMNS = [
-    # not from gufi_trace2index
-    ['id',                                       None],
-    ['commit',                                    str],
-    ['branch',                                    str],
+COLUMN_FORMAT_1 = [
 
     # from gufi_trace2index
     ['Handle args',                             float],
@@ -99,11 +95,24 @@ COLUMNS = [
     ['Files inserted',                            int],
 ]
 
+
+COLUMNS_COMBINED = [
+    # not from gufi_query
+    ['id',                                          None],
+    ['commit',                                       str],
+    ['branch',                                       str],
+
+] + COLUMN_FORMAT_1
+
+# Remove duplicate entries
+COLUMNS = []
+[COLUMNS.append(column) for column in COLUMNS_COMBINED if column not in COLUMNS] # pylint: disable=(expression-not-assigned)
+
 def create_table(con):
     common.create_table(con, TABLE_NAME, COLUMNS)
 
 def extract(src, commit, branch):
-    return common.cumulative_times_extract(src, commit, branch, COLUMNS)
+    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1])
 
 def insert(con, parsed):
     common.insert(con, parsed, TABLE_NAME, COLUMNS)

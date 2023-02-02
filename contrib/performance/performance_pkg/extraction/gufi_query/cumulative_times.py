@@ -65,64 +65,125 @@ from performance_pkg.extraction import common
 
 TABLE_NAME = 'cumulative_times'
 
-# ordered cumulative times columns
-COLUMNS = [
-    # not from gufi_query
-    ['id',                                       None],
-    ['commit',                                    str],
-    ['branch',                                    str],
+# ordered cumulative times columns (Most recent commit -> commit 908c161 "reorganize gufi_query")
+COLUMN_FORMAT_1 = [
 
     # from gufi_query
-    ['set up globals',                          float],
-    ['set up intermediate databases',           float],
-    ['thread pool',                             float],
-    ['open directories',                        float],
-    ['attach index',                            float],
-    ['xattrprep',                               float],
-    ['addqueryfuncs',                           float],
-    ['get_rollupscore',                         float],
-    ['descend',                                 float],
-    ['check args',                              float],
-    ['check level',                             float],
-    ['check level <= max_level branch',         float],
-    ['while true',                              float],
-    ['readdir',                                 float],
-    ['readdir != null branch',                  float],
-    ['strncmp',                                 float],
-    ['strncmp != . or ..',                      float],
-    ['snprintf',                                float],
-    ['lstat',                                   float],
-    ['isdir',                                   float],
-    ['isdir branch',                            float],
-    ['access',                                  float],
-    ['set',                                     float],
-    ['clone',                                   float],
-    ['pushdir',                                 float],
-    ['check if treesummary table exists',       float],
-    ['sqltsum',                                 float],
-    ['sqlsum',                                  float],
-    ['sqlent',                                  float],
-    ['xattrdone',                               float],
-    ['detach index',                            float],
-    ['close directories',                       float],
-    ['restore timestamps',                      float],
-    ['free work',                               float],
-    ['output timestamps',                       float],
-    ['aggregate into final databases',          float],
-    ['print aggregated results',                float],
-    ['clean up globals',                        float],
-    ['Threads run',                               int],
-    ['Queries performed',                         int],
-    ['Rows printed to stdout or outfiles',        int],
-    ['Total Thread Time (not including main)',  float],
-    ['Real time (main)',                        float],
+    ['set up globals',                             float],
+    ['set up intermediate databases',              float],
+    ['thread pool',                                float],
+    ['open directories',                           float],
+    ['attach index',                               float],
+    ['xattrprep',                                  float],
+    ['addqueryfuncs',                              float],
+    ['get_rollupscore',                            float],
+    ['descend',                                    float],
+    ['check args',                                 float],
+    ['check level',                                float],
+    ['check level <= max_level branch',            float],
+    ['while true',                                 float],
+    ['readdir',                                    float],
+    ['readdir != null branch',                     float],
+    ['strncmp',                                    float],
+    ['strncmp != . or ..',                         float],
+    ['snprintf',                                   float],
+    ['lstat',                                      float],
+    ['isdir',                                      float],
+    ['isdir branch',                               float],
+    ['access',                                     float],
+    ['set',                                        float],
+    ['clone',                                      float],
+    ['pushdir',                                    float],
+    ['check if treesummary table exists',          float],
+    ['sqltsum',                                    float],
+    ['sqlsum',                                     float],
+    ['sqlent',                                     float],
+    ['xattrdone',                                  float],
+    ['detach index',                               float],
+    ['close directories',                          float],
+    ['restore timestamps',                         float],
+    ['free work',                                  float],
+    ['output timestamps',                          float],
+    ['aggregate into final databases',             float],
+    ['print aggregated results',                   float],
+    ['clean up globals',                           float],
+    ['Threads run',                                  int],
+    ['Queries performed',                            int],
+    ['Rows printed to stdout or outfiles',           int],
+    ['Total Thread Time (not including main)',     float],
+    ['Real time (main)',                           float],
 ]
+
+# ordered cumulative times columns (commit 8060d30 "split build_and_install function" -> ???)
+COLUMN_FORMAT_2=  [
+
+    # from gufi_query
+    ['set up globals',                             float],
+    ['set up intermediate databases',              float],
+    ['thread pool',                                float],
+    ['open directories',                           float],
+    ['open databases',                             float],
+    ['sqlite3_open_v2',                            float],
+    ['set pragmas',                                float],
+    ['load extensions',                            float],
+    ['addqueryfuncs',                              float],
+    ['xattrprep',                                  float],
+    ['get_rollupscore',                            float],
+    ['descend',                                    float],
+    ['check args',                                 float],
+    ['check level',                                float],
+    ['check level <= max_level branch',            float],
+    ['while true',                                 float],
+    ['readdir',                                    float],
+    ['readdir != null branch',                     float],
+    ['strncmp',                                    float],
+    ['strncmp != . or ..',                         float],
+    ['snprintf',                                   float],
+    ['lstat',                                      float],
+    ['isdir',                                      float],
+    ['isdir branch',                               float],
+    ['access',                                     float],
+    ['set',                                        float],
+    ['clone',                                      float],
+    ['pushdir',                                    float],
+    ['attach intermediate databases',              float],
+    ['check if treesummary table exists',          float],
+    ['sqltsum',                                    float],
+    ['sqlsum',                                     float],
+    ['sqlent',                                     float],
+    ['detach intermediate databases',              float],
+    ['close databases',                            float],
+    ['close directories',                          float],
+    ['restore timestamps',                         float],
+    ['free work',                                  float],
+    ['output timestamps',                          float],
+    ['aggregate into final databases',             float],
+    ['print aggregated results',                   float],
+    ['clean up globals',                           float],
+    ['Threads run',                                  int],
+    ['Queries performed',                            int],
+    ['Rows printed to stdout or outfiles',           int],
+    ['Total Thread Time (not including main)',     float],
+    ['Real time (main)',                           float],
+]
+
+COLUMNS_COMBINED = [
+    # not from gufi_query
+    ['id',                                          None],
+    ['commit',                                       str],
+    ['branch',                                       str],
+
+] + COLUMN_FORMAT_1 + COLUMN_FORMAT_2
+
+# Remove duplicate entries
+COLUMNS = []
+[COLUMNS.append(column) for column in COLUMNS_COMBINED if column not in COLUMNS] # pylint: disable=(expression-not-assigned)
 
 def create_table(con):
     common.create_table(con, TABLE_NAME, COLUMNS)
 
 def extract(src, commit, branch):
-    return common.cumulative_times_extract(src, commit, branch, COLUMNS)
+    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1, COLUMN_FORMAT_2])
 
 def insert(con, parsed):
     common.insert(con, parsed, TABLE_NAME, COLUMNS)
