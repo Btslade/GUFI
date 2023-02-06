@@ -114,7 +114,7 @@ COLUMN_FORMAT_1 = [
     ['Real time (main)',                           float],
 ]
 
-# ordered cumulative times columns (commit 8060d30 "split build_and_install function" -> ???)
+# ordered cumulative times columns (commit 8060d30 "split build_and_install function" -> commit 61c0a9d "count queries instead of multiplying")
 COLUMN_FORMAT_2=  [
 
     # from gufi_query
@@ -167,13 +167,65 @@ COLUMN_FORMAT_2=  [
     ['Real time (main)',                           float],
 ]
 
+# ordered cumulative times columns (commit 4164985 "change querydb macro into a function" -> ???)
+COLUMN_FORMAT_3=  [
+
+    # from gufi_query
+    ['set up globals',                             float],
+    ['set up intermediate databases',              float],
+    ['thread pool',                                float],
+    ['open directories',                           float],
+    ['open databases',                             float],
+    ['sqlite3_open_v2',                            float],
+    ['set pragmas',                                float],
+    ['load extensions',                            float],
+    ['addqueryfuncs',                              float],
+    ['xattrprep',                                  float],
+    ['get_rollupscore',                            float],
+    ['descend',                                    float],
+    ['check args',                                 float],
+    ['check level',                                float],
+    ['check level <= max_level branch',            float],
+    ['while true',                                 float],
+    ['readdir',                                    float],
+    ['readdir != null branch',                     float],
+    ['strncmp',                                    float],
+    ['strncmp != . or ..',                         float],
+    ['snprintf',                                   float],
+    ['lstat',                                      float],
+    ['isdir',                                      float],
+    ['isdir branch',                               float],
+    ['access',                                     float],
+    ['set',                                        float],
+    ['clone',                                      float],
+    ['pushdir',                                    float],
+    ['attach intermediate databases',              float],
+    ['check if treesummary table exists',          float],
+    ['sqltsum',                                    float],
+    ['sqlsum',                                     float],
+    ['sqlent',                                     float],
+    ['detach intermediate databases',              float],
+    ['close databases',                            float],
+    ['close directories',                          float],
+    ['restore timestamps',                         float],
+    ['free work',                                  float],
+    ['output timestamps',                          float],
+    ['aggregate into final databases',             float],
+    ['print aggregated results',                   float],
+    ['clean up globals',                           float],
+    ['Rows returned',                                int],
+    ['Queries performed',                            int],
+    ['Real time',                                  float],
+    ['Total Thread Time (not including main)',     float],
+]
+
 COLUMNS_COMBINED = [
     # not from gufi_query
     ['id',                                          None],
     ['commit',                                       str],
     ['branch',                                       str],
 
-] + COLUMN_FORMAT_1 + COLUMN_FORMAT_2
+] + COLUMN_FORMAT_1 + COLUMN_FORMAT_2 + COLUMN_FORMAT_3
 
 # Remove duplicate entries
 COLUMNS = []
@@ -183,7 +235,7 @@ def create_table(con):
     common.create_table(con, TABLE_NAME, COLUMNS)
 
 def extract(src, commit, branch):
-    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1, COLUMN_FORMAT_2])
+    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1, COLUMN_FORMAT_2, COLUMN_FORMAT_3])
 
 def insert(con, parsed):
     common.insert(con, parsed, TABLE_NAME, COLUMNS)

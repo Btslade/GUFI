@@ -93,6 +93,8 @@ class TestExtraction(unittest.TestCase):
         self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_1)
         self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_2)
         self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_2)
+        self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_3)
+        self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_3)
 
     def test_gufi_query_cumulative_times_terse(self):
         columns = gq_ctt.COLUMNS[3:]
