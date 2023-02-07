@@ -115,7 +115,7 @@ COLUMN_FORMAT_1 = [
 ]
 
 # ordered cumulative times columns (commit 8060d30 "split build_and_install function" -> commit 61c0a9d "count queries instead of multiplying")
-COLUMN_FORMAT_2=  [
+COLUMN_FORMAT_2 =  [
 
     # from gufi_query
     ['set up globals',                             float],
@@ -168,7 +168,7 @@ COLUMN_FORMAT_2=  [
 ]
 
 # ordered cumulative times columns (commit 4164985 "change querydb macro into a function" -> commit 7cd35f8 "xattrprep from Gary")
-COLUMN_FORMAT_3=  [
+COLUMN_FORMAT_3 =  [
 
     # from gufi_query
     ['set up globals',                             float],
@@ -220,7 +220,7 @@ COLUMN_FORMAT_3=  [
 ]
 
 # ordered cumulative times columns (commit 216ef5b "accidentally added argument to -w flag" -> commit 75e2c5b "update tsum to use sqlite3_exec instead of rawquerydb")
-COLUMN_FORMAT_4=  [
+COLUMN_FORMAT_4 =  [
 
     # from gufi_query
     ['set up globals',                             float],
@@ -269,7 +269,7 @@ COLUMN_FORMAT_4=  [
     ['Total Thread Time (not including main)',     float],
 ]
 
-# ordered cumulative times columns (commit "3235400 also print git branch name"  -> commit ???)
+# ordered cumulative times columns (commit "3235400 also print git branch name"  -> commit 093dc32 "Added total time spent in threads to cumulative times output")
 COLUMN_FORMAT_5 =  [
 
     # from gufi_query
@@ -317,6 +317,52 @@ COLUMN_FORMAT_5 =  [
     ['Total Thread Time (not including main)',     float],
 ]
 
+# ordered cumulative times columns (97fabf7 dirents not of type d, f, or l are ignored  -> commit ???)
+COLUMN_FORMAT_6 =  [
+
+    # from gufi_query
+    ['set up globals',                             float],
+    ['set up intermediate databases',              float],
+    ['thread pool',                                float],
+    ['open directories',                           float],
+    ['open databases',                             float],
+    ['sqlite3_open_v2',                            float],
+    ['set pragmas',                                float],
+    ['load extensions',                            float],
+    ['addqueryfuncs',                              float],
+    ['descend',                                    float],
+    ['check args',                                 float],
+    ['check level',                                float],
+    ['check level <= max_level branch',            float],
+    ['while true',                                 float],
+    ['readdir',                                    float],
+    ['readdir != null branch',                     float],
+    ['strncmp',                                    float],
+    ['strncmp != . or ..',                         float],
+    ['snprintf',                                   float],
+    ['lstat',                                      float],
+    ['isdir',                                      float],
+    ['isdir branch',                               float],
+    ['access',                                     float],
+    ['set',                                        float],
+    ['clone',                                      float],
+    ['pushdir',                                    float],
+    ['attach intermediate databases',              float],
+    ['sqlsum',                                     float],
+    ['sqlent',                                     float],
+    ['detach intermediate databases',              float],
+    ['close databases',                            float],
+    ['close directories',                          float],
+    ['restore timestamps',                         float],
+    ['free work',                                  float],
+    ['output timestamps',                          float],
+    ['aggregate into final databases',             float],
+    ['print aggregated results',                   float],
+    ['clean up globals',                           float],
+    ['Rows returned',                                int],
+    ['Queries performed',                            int],
+    ['Real time',                                  float],
+]
 
 COLUMNS_COMBINED = [
     # not from gufi_query
@@ -324,7 +370,7 @@ COLUMNS_COMBINED = [
     ['commit',                                       str],
     ['branch',                                       str],
 
-] + COLUMN_FORMAT_1 + COLUMN_FORMAT_2 + COLUMN_FORMAT_3 + COLUMN_FORMAT_4 + COLUMN_FORMAT_5
+] + COLUMN_FORMAT_1 + COLUMN_FORMAT_2 + COLUMN_FORMAT_3 + COLUMN_FORMAT_4 + COLUMN_FORMAT_5 + COLUMN_FORMAT_6
 
 # Remove duplicate entries
 COLUMNS = []
@@ -334,7 +380,7 @@ def create_table(con):
     common.create_table(con, TABLE_NAME, COLUMNS)
 
 def extract(src, commit, branch):
-    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1, COLUMN_FORMAT_2, COLUMN_FORMAT_3, COLUMN_FORMAT_4, COLUMN_FORMAT_5])
+    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1, COLUMN_FORMAT_2, COLUMN_FORMAT_3, COLUMN_FORMAT_4, COLUMN_FORMAT_5, COLUMN_FORMAT_6])
 
 def insert(con, parsed):
     common.insert(con, parsed, TABLE_NAME, COLUMNS)
