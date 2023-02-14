@@ -417,7 +417,7 @@ COLUMN_FORMAT_7 =  [
     ['Real time',                                  float],
 ]
 
-# ordered cumulative times columns (commit aad5b08 "use struct start_end instead of individual timespecs" -> ???)
+# ordered cumulative times columns (commit aad5b08 "use struct start_end instead of individual timespecs")
 COLUMN_FORMAT_8 =  [
 
     # from gufi_query
@@ -466,13 +466,62 @@ COLUMN_FORMAT_8 =  [
     ['Real time',                                  float],
 ]
 
+# ordered cumulative times columns (commit aaa5b89 "remove travis user in docker" -> ???)
+COLUMN_FORMAT_9 =  [
+
+    # from gufi_query
+    ['set up globals',                             float],
+    ['set up intermediate databases',              float],
+    ['thread pool',                                float],
+    ['open directories',                           float],
+    ['open databases',                             float],
+    ['sqlite3_open_v2',                            float],
+    ['create tables',                              float],
+    ['set pragmas',                                float],
+    ['load extensions',                            float],
+    ['addqueryfuncs',                              float],
+    ['descend',                                    float],
+    ['check args',                                 float],
+    ['check level',                                float],
+    ['check level <= max_level branch',            float],
+    ['while true',                                 float],
+    ['readdir',                                    float],
+    ['readdir != null branch',                     float],
+    ['strncmp',                                    float],
+    ['strncmp != . or ..',                         float],
+    ['snprintf',                                   float],
+    ['lstat',                                      float],
+    ['isdir',                                      float],
+    ['isdir branch',                               float],
+    ['access',                                     float],
+    ['set',                                        float],
+    ['clone',                                      float],
+    ['pushdir',                                    float],
+    ['attach intermediate databases',              float],
+    ['sqlite3_exec',                               float],
+    ['detach intermediate databases',              float],
+    ['close databases',                            float],
+    ['close directories',                          float],
+    ['restore timestamps',                         float],
+    ['free work',                                  float],
+    ['output timestamps',                          float],
+    ['aggregate into final databases',             float],
+    ['clean up intermediate databases',            float],
+    ['print aggregated results',                   float],
+    ['clean up globals',                           float],
+    ['Rows returned',                                int],
+    ['Queries performed',                            int],
+    ['Real time',                                  float],
+]
+
+
 COLUMNS_COMBINED = [
     # not from gufi_query
     ['id',                                          None],
     ['commit',                                       str],
     ['branch',                                       str],
 
-] + COLUMN_FORMAT_1 + COLUMN_FORMAT_2 + COLUMN_FORMAT_3 + COLUMN_FORMAT_4 + COLUMN_FORMAT_5 + COLUMN_FORMAT_6 + COLUMN_FORMAT_7 + COLUMN_FORMAT_8
+] + COLUMN_FORMAT_1 + COLUMN_FORMAT_2 + COLUMN_FORMAT_3 + COLUMN_FORMAT_4 + COLUMN_FORMAT_5 + COLUMN_FORMAT_6 + COLUMN_FORMAT_7 + COLUMN_FORMAT_8 + COLUMN_FORMAT_9
 
 # Remove duplicate entries
 COLUMNS = []
@@ -482,7 +531,7 @@ def create_table(con):
     common.create_table(con, TABLE_NAME, COLUMNS)
 
 def extract(src, commit, branch):
-    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1, COLUMN_FORMAT_2, COLUMN_FORMAT_3, COLUMN_FORMAT_4, COLUMN_FORMAT_5, COLUMN_FORMAT_6, COLUMN_FORMAT_7, COLUMN_FORMAT_8])
+    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1, COLUMN_FORMAT_2, COLUMN_FORMAT_3, COLUMN_FORMAT_4, COLUMN_FORMAT_5, COLUMN_FORMAT_6, COLUMN_FORMAT_7, COLUMN_FORMAT_8, COLUMN_FORMAT_9])
 
 def insert(con, parsed):
     common.insert(con, parsed, TABLE_NAME, COLUMNS)
