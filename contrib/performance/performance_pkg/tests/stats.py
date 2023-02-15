@@ -75,7 +75,8 @@ class TestStat(unittest.TestCase): # pylint: disable=too-many-instance-attribute
         self.columns = self.odd
         self.single_commit_raw_numbers = [self.odd] * self.runs
         self.stat_names = [stats.AVERAGE, stats.MEDIAN,
-                           stats.MINIMUM, stats.MAXIMUM]
+                           stats.MINIMUM, stats.MAXIMUM,
+                           stats.UPPER_QUARTILE, stats.LOWER_QUARTILE]
         self.commit_count = 2
         self.commits = list(range(self.commit_count))
 
@@ -86,6 +87,14 @@ class TestStat(unittest.TestCase): # pylint: disable=too-many-instance-attribute
     def test_median(self):
         self.assertEqual(stats.median(self.even), 1.5)
         self.assertEqual(stats.median(self.odd),  2)
+
+    def test_upper_quartile(self):
+        self.assertEqual(stats.upper_quartile(self.even), 2.5)
+        self.assertEqual(stats.upper_quartile(self.odd), 3.5)
+
+    def test_lower_quartile(self):
+        self.assertEqual(stats.lower_quartile(self.even), 0.5)
+        self.assertEqual(stats.lower_quartile(self.odd), 0.5)
 
     def single_commit_stats_check(self, scs):
         # stats are listed in the returned dictionary
