@@ -136,7 +136,7 @@ def generate(conf, const_x, ys):
         label       = line[0]                           # name of this line
         y_vals      = line[1]                           # collection of values for the current line
         y_vals_main = y_vals[axes[config.AXES_Y_STAT]]  # main points to plot for this line
-
+        print(y_vals)
         # annotate main points
         if axes[config.AXES_ANNOTATE]:
             add_annotations(const_x, y_vals_main,
