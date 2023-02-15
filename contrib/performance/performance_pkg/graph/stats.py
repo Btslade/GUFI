@@ -62,7 +62,7 @@
 
 
 import numbers
-
+import math
 import performance_pkg.graph.config
 
 def average(data):
@@ -77,16 +77,32 @@ def median(data):
 
     return average(sorted(data)[half - 1:half + 1])
 
+def upper_quartile(data):
+    pos = (0.75*(len(data) + 1)) - 1
+    if float(pos).is_integer():
+        return float(sorted(data)[int(pos)])
+    return float((float(sorted(data)[int(math.floor(pos))]) + float(sorted(data)[int(math.ceil(pos))]))/2)
+
+def lower_quartile(data):
+    pos = (0.25*(len(data) + 1)) - 1
+    if float(pos).is_integer():
+        return float(sorted(data)[int(pos)])
+    return float((float(sorted(data)[int(math.floor(pos))]) + float(sorted(data)[int(math.ceil(pos))]))/2)
+
 AVERAGE = 'average'
 MEDIAN  = 'median'
 MINIMUM = 'minimum'
 MAXIMUM = 'maximum'
+UPPER_QUARTILE = 'upper_quartile'
+LOWER_QUARTILE = 'lower_quartile'
 
 STATS = {
-    AVERAGE : average,
-    MEDIAN  : median,
-    MINIMUM : min,
-    MAXIMUM : max,
+    AVERAGE        : average,
+    MEDIAN         : median,
+    MINIMUM        : min,
+    MAXIMUM        : max,
+    UPPER_QUARTILE : upper_quartile,
+    LOWER_QUARTILE : lower_quartile,
 }
 
 def single_commit_stats(columns, rows, stat_names):
