@@ -61,6 +61,8 @@
 
 
 
+import numbers
+
 from matplotlib import pyplot as plt
 
 from performance_pkg.graph import config
@@ -136,7 +138,7 @@ def generate(conf, const_x, ys):
         label       = line[0]                           # name of this line
         y_vals      = line[1]                           # collection of values for the current line
         y_vals_main = y_vals[axes[config.AXES_Y_STAT]]  # main points to plot for this line
-        print(y_vals)
+
         # annotate main points
         if axes[config.AXES_ANNOTATE]:
             add_annotations(const_x, y_vals_main,
@@ -201,5 +203,82 @@ def generate(conf, const_x, ys):
         plt.ylim(top=axes[config.AXES_Y_MAX])
 
     plt.legend()
+    plt.savefig(output[config.OUTPUT_PATH],
+                bbox_inches='tight') # remove extra whitespace around border
+
+def generate_boxplot(conf, commits, raw_numbers):
+
+    # pylint: disable=too-many-locals,too-many-branches
+
+
+    # This currently only functions with 1 column
+    # https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.boxplot.html
+
+    # reformat data
+    data = []
+    list1 = []
+    for raw in raw_numbers:
+        for row in raw:
+            if len(row) != 1:
+                raise ValueError('Boxplots only work with one column, got {0}'.format(len(row)))
+            for col in row:
+                if not isinstance(col, numbers.Number):
+                    raise TypeError('Raw value {0} is not numeric'.format(col))
+                list1.append(col)
+        data.append(list1)
+        list1 = []
+
+    # pad and unpack config
+    output, _, axes, _, _ = pad_config(conf)
+    boxplot = conf[config.BOXPLOT]
+
+    # plot data
+    plt.figure(figsize=tuple(output[config.OUTPUT_DIMENSIONS][:2]))
+    plt.title(output[config.OUTPUT_GRAPH_TITLE])
+    plt.xlabel('Commit') # fixed
+    if axes[config.AXES_X_LABEL_ROTATION] is not None:
+        plt.tick_params(axis='x', labelrotation=axes[config.AXES_X_LABEL_ROTATION])
+    if axes[config.AXES_X_LABEL_SIZE] is not None:
+        plt.tick_params(axis='x', labelsize=axes[config.AXES_X_LABEL_SIZE])
+    plt.ylabel(axes[config.AXES_Y_LABEL])
+
+    if axes[config.AXES_Y_MIN] is not None:
+        plt.ylim(bottom=axes[config.AXES_Y_MIN])
+
+    if axes[config.AXES_Y_MAX] is not None:
+        plt.ylim(top=axes[config.AXES_Y_MAX])
+
+    # Plot
+    bp = plt.boxplot(data, patch_artist = True)
+
+    for patch in bp['boxes']:
+        patch.set_facecolor(boxplot[config.BOXPLOT_FACE_COLOR])
+
+    for whisker in bp['whiskers']:
+        whisker.set(color = boxplot[config.BOXPLOT_WHISKER_COLOR],
+                    linewidth = boxplot[config.BOXPLOT_WHISKER_WIDTH],
+                    linestyle = boxplot[config.BOXPLOT_WHISKER_TYPE])
+
+    for cap in bp['caps']:
+        cap.set(color = boxplot[config.BOXPLOT_CAP_COLOR],
+                linewidth = boxplot[config.BOXPLOT_CAP_SIZE])
+
+    for median in bp['medians']:
+        median.set(color = boxplot[config.BOXPLOT_MEDIAN_COLOR],
+                   linewidth = boxplot[config.BOXPLOT_MEDIAN_WIDTH])
+
+    for flier in bp['fliers']:
+        flier.set(marker = boxplot[config.BOXPLOT_FLIER_MARKER],
+                  alpha = boxplot[config.BOXPLOT_FLIER_ALPHA])
+
+    # Boxplot specifically requires a manual xtick definition
+    plt.xticks([x+1 for x in range(len(commits))], commits)
+
+    if axes[config.AXES_Y_MIN] is not None:
+        plt.ylim(bottom=axes[config.AXES_Y_MIN])
+
+    if axes[config.AXES_Y_MAX] is not None:
+        plt.ylim(top=axes[config.AXES_Y_MAX])
+
     plt.savefig(output[config.OUTPUT_PATH],
                 bbox_inches='tight') # remove extra whitespace around border

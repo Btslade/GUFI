@@ -94,6 +94,12 @@ def pos_float_list(value):
             raise ValueError('Positive float list got a non-positive number: {0}'.format(val))
     return values
 
+def fraction_float (value):
+    val = float(value)
+    if val < 0 or val > 1:
+        raise ValueError('Fraction float got a value not between 0 and 1 (inclusive): {0}'.format(val))
+    return val
+
 # config sections and keys
 RAW_DATA = 'raw_data'                      # section
 RAW_DATA_COMMITS = 'commits'               # string list
@@ -103,6 +109,19 @@ OUTPUT = 'output'                          # section
 OUTPUT_PATH = 'path'                       # string
 OUTPUT_GRAPH_TITLE = 'graph_title'         # string
 OUTPUT_DIMENSIONS = 'graph_dimensions'     # postive float pair
+
+BOXPLOT = 'boxplot'                        # section
+BOXPLOT_USE = 'use'                        # bool
+BOXPLOT_FACE_COLOR = 'face_color'          # string
+BOXPLOT_WHISKER_COLOR = 'whisker_color'    # string
+BOXPLOT_WHISKER_WIDTH = 'whisker_width'    # positive float
+BOXPLOT_WHISKER_TYPE = 'whisker_type'      # string
+BOXPLOT_CAP_COLOR = 'cap_color'            # string
+BOXPLOT_CAP_SIZE = 'cap_size'              # positive float
+BOXPLOT_MEDIAN_COLOR = 'median_color'      # string
+BOXPLOT_MEDIAN_WIDTH = 'median_width'      # string
+BOXPLOT_FLIER_MARKER = 'flier_marker'      # string
+BOXPLOT_FLIER_ALPHA = 'flier_alpha'        # string
 
 LINES = 'lines'                            # section
 LINES_COLORS = 'colors'                    # string list
@@ -142,6 +161,22 @@ DEFAULTS = {
         OUTPUT_PATH        : [os.path.abspath, ''],
         OUTPUT_GRAPH_TITLE : [str, ''],
         OUTPUT_DIMENSIONS  : [pos_float_list, [0.0, 0.0]],
+    },
+
+    # Will Cancel the effects of other options
+    BOXPLOT : {
+        BOXPLOT_USE            : [bool, False],
+        BOXPLOT_FACE_COLOR     : [str, 'white'],
+        BOXPLOT_WHISKER_COLOR  : [str, 'black'],
+        BOXPLOT_WHISKER_WIDTH  : [str, '1' ],
+        BOXPLOT_WHISKER_TYPE   : [str, ':'],
+        BOXPLOT_CAP_COLOR      : [str, 'black'],
+        BOXPLOT_CAP_SIZE       : [pos_float, 1],
+        BOXPLOT_MEDIAN_COLOR   : [str, 'red'],
+        BOXPLOT_MEDIAN_WIDTH   : [pos_float, 1],
+        BOXPLOT_FLIER_MARKER   : [str, 'D'],
+        BOXPLOT_FLIER_ALPHA    : [fraction_float, '1']
+
     },
 
     LINES : {
@@ -226,6 +261,18 @@ def config_file(filename):
     read_value(conf, parser, DEFAULTS, OUTPUT, OUTPUT_PATH)
     read_value(conf, parser, DEFAULTS, OUTPUT, OUTPUT_GRAPH_TITLE)
     read_value(conf, parser, DEFAULTS, OUTPUT, OUTPUT_DIMENSIONS)
+
+    read_bool(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_USE)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_FACE_COLOR)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_WHISKER_COLOR)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_WHISKER_WIDTH)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_WHISKER_TYPE)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_CAP_COLOR)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_CAP_SIZE)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_MEDIAN_COLOR)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_MEDIAN_WIDTH)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_FLIER_MARKER)
+    read_value(conf, parser, DEFAULTS, BOXPLOT, BOXPLOT_FLIER_ALPHA)
 
     read_value(conf, parser, DEFAULTS, LINES, LINES_COLORS)
     read_value(conf, parser, DEFAULTS, LINES, LINES_TYPES)

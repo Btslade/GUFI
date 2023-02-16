@@ -192,7 +192,10 @@ def run(argv):
                for commit in commits]
 
     # plot stats and save to file
-    graph.generate(conf, commits, lines)
+    if conf[config.BOXPLOT][config.BOXPLOT_USE]:
+        graph.generate_boxplot(conf, commits, raw_numbers)
+    else:
+        graph.generate(conf, commits, lines)
 
 if __name__ == '__main__':
     run(sys.argv[1:])

@@ -2,7 +2,6 @@
 
 Config files are used to define a graph's parameters. Each config file is divided up into sections based on how they affect the graph. The configparser Python library is used to parse these files.
 
-
 ## Sections and Keys
 
 Sections and Keys may change without an immediate adjustment to this readme, to see an exhaustive list of all available sections and keys, see [config.py](../performance_pkg/graph/config.py)
@@ -12,7 +11,7 @@ Sections and Keys may change without an immediate adjustment to this readme, to 
 ### [raw_data]
 
 **commits**: Commit hashes to plot
-* **NOTE**: A commit hash will not be plotted if it has no debug value data 
+* **NOTE**: A commit hash will not be plotted if it has no debug value data
 * Data Type: List of commit hashes (strings)
     * Can be any [commit-ish or tree-ish identifier](https://stackoverflow.com/a/23303550) that `git` can convert into commit hashes:
     * Example: `b34561a, ce0751d..c8cdd6e`
@@ -20,7 +19,6 @@ Sections and Keys may change without an immediate adjustment to this readme, to 
 **columns**: Column names from a set of debug values stored in a raw data database. See [extraction](../performance_pkg/extraction/) folder and search the GUFI command subdirectories for names
 * Data Type: List of columns (strings)
     * Example: `Real Time (main)`
-
 
 ### [output]
 
@@ -32,11 +30,67 @@ Sections and Keys may change without an immediate adjustment to this readme, to 
 * Data Type: string
     * Example: `My Graph`
 
-**graph_dimensions**: Dimensions of graph in inches 
-* Data Type: `<width>`,`<height>` (**positive_float**,**positive_float**) 
-    * Examples: `12,6` 
+**graph_dimensions**: Dimensions of graph in inches
+* Data Type: `<width>`,`<height>` (**positive_float**,**positive_float**)
+    * Examples: `12,6`
     * See [Matplotlib: Figure size](https://matplotlib.org/stable/gallery/subplots_axes_and_figures/figure_size_units.html)
 
+### [boxplot]
+
+**WARNING**
+* Boxplots will only work when analyzing a single column
+* By using boxplots, all defined values attributed to lineplots are ignored
+* See [Matplotlib: Boxplots](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.boxplot.html) for examples
+
+**Use**: Use a boxplot instead of a line graph
+* Data Type: boolean
+    * Example: True
+
+**face_color**: color of the boxes (IQR)
+* Data Type: string
+    * Examples: `blue`
+    * See [Matplotlib: Specifying colors](https://matplotlib.org/stable/tutorials/colors/colors.html) for a full list of supported color values (Excluding tuples)
+
+**whisker_color**: color of the whiskers
+* Data Type: string
+    * Examples: `blue`
+    * See [Matplotlib: Specifying colors](https://matplotlib.org/stable/tutorials/colors/colors.html) for a full list of supported color values (Excluding tuples)
+
+**whisker_width**: width of the whisker lines in points
+* Data Type: positive float
+    * Examples: 1.5
+
+**whisker_type**: style/type of the whisker line
+* Data Type: string
+    * Examples: `dashed`
+    * See [Matplotlib: Linestyles](https://matplotlib.org/stable/gallery/lines_bars_and_markers/linestyles.html) for a full list of supported line types and styles
+
+**cap_color**: color of the caps of the whisker
+* Data Type: string
+    * Examples: `blue`
+    * See [Matplotlib: Specifying colors](https://matplotlib.org/stable/tutorials/colors/colors.html) for a full list of supported color values (Excluding tuples)
+
+**cap_width**: width of the caps of the whiskers
+* Data Type: positive float
+    * Examples: 1.5
+
+**median_color**: color of the median line
+* Data Type: string
+    * Examples: `blue`
+    * See [Matplotlib: Specifying colors](https://matplotlib.org/stable/tutorials/colors/colors.html) for a full list of supported color values (Excluding tuples)
+
+**median_width**: width of median line
+* Data Type: positive float
+    * Examples: 1.5
+
+**flier_marker**: marker to represent the fliers
+* Data Type: string
+    * Examples: `D`
+    * See [Matplotlib: Markers](https://matplotlib.org/stable/api/markers_api.html) for a full list of supported markers
+
+**flier_alpha**: alpha value of fliers
+* Data Type: float between 0 and 1
+    * Examples: 0.5
 
 ### [lines]
 
@@ -57,7 +111,6 @@ Sections and Keys may change without an immediate adjustment to this readme, to 
 * Data Type: List of markers (strings)
     * Examples: `o,^`
     * See [Matplotlib: Markers](https://matplotlib.org/stable/api/markers_api.html) for a full list of supported markers
-
 
 ### [axes]
 
@@ -100,7 +153,7 @@ Sections and Keys may change without an immediate adjustment to this readme, to 
         * If max is < y_min, the axis will flip
 
 **annotate**: Annotate y_stat values next to their respective points
-* Data Type: boolean 
+* Data Type: boolean
     * Example: `True`
 
 ### [error_bar]
@@ -111,7 +164,7 @@ Sections and Keys may change without an immediate adjustment to this readme, to 
         * To see all available statistics, see [stats.py](../performance_pkg/graph/stats.py)
 
 **top**: Statistic to be represented as the top of the error bar
-* Data Type: String 
+* Data Type: String
     * Example: `maximum`
         * To see all available statistics, see [stats.py](../performance_pkg/graph/stats.py)
 
@@ -127,7 +180,7 @@ Sections and Keys may change without an immediate adjustment to this readme, to 
     * See [Matplotlib: Errorbar](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.errorbar.html) and view the capsize section
 
 **annotate**: Annotate statistic values next to their respective errorbar height
-* Data Type: boolean 
+* Data Type: boolean
     * Example: `True`
 
 ### [annotations]
@@ -163,6 +216,9 @@ Below is a full list of all available config key overrides when calling **graph_
 * --output_graph_title
 * --output_graph_dimensions
 
+### [boxplot]
+* --boxplot_use
+
 ### [lines]
 * --lines_colors
 * --lines_types
@@ -173,7 +229,7 @@ Below is a full list of all available config key overrides when calling **graph_
 * --axes_x_label_size
 * --axes_x_label_rotation
 * --axes_y_label
-* --axes_y_stat AXES_Y_STAT
+* --axes_y_stat
 * --axes_y_min
 * --axes_y_max
 * --axes_annotate
@@ -190,4 +246,3 @@ Below is a full list of all available config key overrides when calling **graph_
 * --annotations_x_offset
 * --annotations_y_offset
 * --annotations_text_colors
-
