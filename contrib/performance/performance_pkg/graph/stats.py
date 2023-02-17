@@ -81,13 +81,13 @@ def upper_quartile(data):
     pos = (0.75*(len(data) + 1)) - 1
     if float(pos).is_integer():
         return float(sorted(data)[int(pos)])
-    return float((sorted(data)[int(math.floor(pos))] + sorted(data)[int(math.ceil(pos))])/2)
+    return float((float(sorted(data)[int(math.floor(pos))]) + float(sorted(data)[int(math.ceil(pos))]))/2)
 
 def lower_quartile(data):
     pos = (0.25*(len(data) + 1)) - 1
     if float(pos).is_integer():
         return float(sorted(data)[int(pos)])
-    return float((sorted(data)[int(math.floor(pos))] + sorted(data)[int(math.ceil(pos))])/2)
+    return float((float(sorted(data)[int(math.floor(pos))]) + float(sorted(data)[int(math.ceil(pos))]))/2)
 
 AVERAGE = 'average'
 MEDIAN  = 'median'
