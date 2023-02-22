@@ -127,6 +127,13 @@ ERROR_BAR_COLORS = 'colors'                # string list
 ERROR_BAR_CAP_SIZE = 'cap_size'            # positive float
 ERROR_BAR_ANNOTATE = 'annotate'            # bool
 
+LAYERED_BAR = 'layered_bar'                # section
+LAYERED_BAR_BOTTOM = 'bottom'              # string
+LAYERED_BAR_TOP = 'top'                    # string
+LAYERED_BAR_COLORS = 'colors'              # string list
+LAYERED_BAR_CAP_SIZE = 'cap_size'          # positive float
+LAYERED_BAR_ANNOTATE = 'annotate'          # bool
+
 ANNOTATIONS = 'annotations'                # section
 ANNOTATIONS_PRECISION = 'precision'        # positive integer
 ANNOTATIONS_X_OFFSET = 'x_offset'          # float
@@ -169,6 +176,14 @@ DEFAULTS = {
         ERROR_BAR_COLORS    : [str_list, []],
         ERROR_BAR_CAP_SIZE  : [pos_float, 10],
         ERROR_BAR_ANNOTATE  : [bool, False]
+    },
+
+    LAYERED_BAR : {
+        LAYERED_BAR_BOTTOM    : [str, None],
+        LAYERED_BAR_TOP       : [str, None],
+        LAYERED_BAR_COLORS    : [str_list, []],
+        LAYERED_BAR_CAP_SIZE  : [pos_float, 10],
+        LAYERED_BAR_ANNOTATE  : [bool, False]
     },
 
     # affects both AXES_Y_STAT and ERROR_BAR
@@ -248,6 +263,12 @@ def config_file(filename):
     read_value(conf, parser, DEFAULTS, ERROR_BAR, ERROR_BAR_COLORS)
     read_value(conf, parser, DEFAULTS, ERROR_BAR, ERROR_BAR_CAP_SIZE)
     read_bool (conf, parser, DEFAULTS, ERROR_BAR, ERROR_BAR_ANNOTATE)
+
+    read_value(conf, parser, DEFAULTS, LAYERED_BAR, LAYERED_BAR_BOTTOM)
+    read_value(conf, parser, DEFAULTS, LAYERED_BAR, LAYERED_BAR_TOP)
+    read_value(conf, parser, DEFAULTS, LAYERED_BAR, LAYERED_BAR_COLORS)
+    read_value(conf, parser, DEFAULTS, LAYERED_BAR, LAYERED_BAR_CAP_SIZE)
+    read_bool (conf, parser, DEFAULTS, LAYERED_BAR, LAYERED_BAR_ANNOTATE)
 
     read_value(conf, parser, DEFAULTS, ANNOTATIONS, ANNOTATIONS_PRECISION)
     read_value(conf, parser, DEFAULTS, ANNOTATIONS, ANNOTATIONS_X_OFFSET)

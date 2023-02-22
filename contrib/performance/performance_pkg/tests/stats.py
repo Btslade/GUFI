@@ -77,7 +77,8 @@ class TestStat(unittest.TestCase): # pylint: disable=too-many-instance-attribute
         self.single_commit_raw_numbers = [self.odd] * self.runs
         self.stat_names = [stats.AVERAGE, stats.MEDIAN,
                            stats.MINIMUM, stats.MAXIMUM,
-                           stats.UPPER_QUARTILE, stats.LOWER_QUARTILE]
+                           stats.UPPER_QUARTILE, stats.LOWER_QUARTILE,
+                           stats.UPPER_EXTREME, stats.LOWER_EXTREME,]
         self.commit_count = 2
         self.commits = list(range(self.commit_count))
 
@@ -97,6 +98,18 @@ class TestStat(unittest.TestCase): # pylint: disable=too-many-instance-attribute
         self.assertEqual(stats.lower_quartile(self.even), 0.5)
         self.assertEqual(stats.lower_quartile(self.odd), 0.5)
 
+    def test_interquartile_range(self):
+        self.assertEqual(stats.interquartile_range(self.even), 2)
+        self.assertEqual(stats.interquartile_range(self.odd), 3.0)
+
+    def test_upper_extreme(self):
+        self.assertEqual(stats.upper_extreme(self.even), 5.5)
+        self.assertEqual(stats.upper_extreme(self.odd), 8)
+
+    def test_lower_extreme(self):
+        self.assertEqual(stats.lower_extreme(self.even), -2.5)
+        self.assertEqual(stats.lower_extreme(self.odd), -4)
+
     def single_commit_stats_check(self, scs):
         # stats are listed in the returned dictionary
         for stat_name in self.stat_names:
@@ -108,6 +121,8 @@ class TestStat(unittest.TestCase): # pylint: disable=too-many-instance-attribute
             self.assertEqual(scs[stats.MEDIAN] [c], c)
             self.assertEqual(scs[stats.MINIMUM][c], c)
             self.assertEqual(scs[stats.MAXIMUM][c], c)
+            self.assertEqual(scs[stats.LOWER_QUARTILE][c], c)
+            self.assertEqual(scs[stats.UPPER_QUARTILE][c], c)
 
     def single_commit_nan(self, scs):
         for stat_name in self.stat_names:
@@ -156,6 +171,10 @@ class TestStat(unittest.TestCase): # pylint: disable=too-many-instance-attribute
                 config.ERROR_BAR_BOTTOM : stats.MINIMUM,
                 config.ERROR_BAR_TOP    : stats.MAXIMUM,
             },
+            config.LAYERED_BAR : {
+                config.LAYERED_BAR_BOTTOM : stats.LOWER_QUARTILE,
+                config.LAYERED_BAR_TOP    : stats.UPPER_QUARTILE,
+            },
         }
 
         lines = stats.generate_lines(conf, self.commits, self.columns,
@@ -167,7 +186,7 @@ class TestStat(unittest.TestCase): # pylint: disable=too-many-instance-attribute
         # each line has average, min and max for self.commit_count commits
         for c in range(self.col_count):
             line = lines[c]
-            for stat_name in [stats.AVERAGE, stats.MINIMUM, stats.MAXIMUM]:
+            for stat_name in [stats.AVERAGE, stats.MINIMUM, stats.MAXIMUM, stats.LOWER_QUARTILE, stats.UPPER_QUARTILE]:
                 points = line[stat_name]
                 for y in range(self.commit_count):
                     self.assertEqual(points[y], c)
@@ -181,6 +200,11 @@ class TestStat(unittest.TestCase): # pylint: disable=too-many-instance-attribute
                 config.ERROR_BAR_BOTTOM : stats.MINIMUM + stats.MAXIMUM, # ValueError
                 config.ERROR_BAR_TOP    : stats.MAXIMUM,
             },
+            config.LAYERED_BAR : {
+                config.LAYERED_BAR_BOTTOM : stats.LOWER_QUARTILE + stats.UPPER_QUARTILE, # ValueError
+                config.LAYERED_BAR_TOP    : stats.UPPER_QUARTILE,
+            },
+
         }
 
         with self.assertRaises(ValueError):

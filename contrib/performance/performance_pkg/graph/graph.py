@@ -83,6 +83,8 @@ def pad_config(conf):
 
     conf[config.ERROR_BAR][config.ERROR_BAR_COLORS] += ['red'] * column_count
 
+    conf[config.LAYERED_BAR][config.LAYERED_BAR_COLORS] += ['red'] * column_count
+
     return [
         # raw data is not needed
         conf[config.OUTPUT],
@@ -90,6 +92,7 @@ def pad_config(conf):
         conf[config.AXES],
         conf[config.ANNOTATIONS],
         conf[config.ERROR_BAR],
+        conf[config.LAYERED_BAR],
     ]
 
 def add_annotations(x_vals, y_vals,
@@ -104,6 +107,48 @@ def add_annotations(x_vals, y_vals,
                      textcoords="offset points",
                      xytext=(x_offset, y_offset))
 
+def setup_errorbar(const_x, y_vals, y_vals_main,
+                   eb_bottom, eb_top, eb_annotate,
+                   annotations, acolor):
+    # pylint: disable=too-many-arguments
+    '''
+    Calculate the yerr of an errorbar and plot its annotations
+    '''
+
+    yerr = None
+
+    # set up bottom error bar
+    if eb_bottom is not None:
+        y_vals_bottom = y_vals[eb_bottom]
+        if eb_annotate:
+            add_annotations(const_x, y_vals_bottom,
+                            annotations[config.ANNOTATIONS_PRECISION],
+                            acolor,
+                            annotations[config.ANNOTATIONS_X_OFFSET],
+                            annotations[config.ANNOTATIONS_Y_OFFSET])
+
+        if yerr is None:
+            yerr = [y_vals_main, y_vals_main]
+
+        yerr[0] = [main - bottom for main, bottom in zip(y_vals_main, y_vals_bottom)]
+
+    # set up top error bar
+    if eb_top is not None:
+        y_vals_top = y_vals[eb_top]
+        if eb_annotate:
+            add_annotations(const_x, y_vals_top,
+                            annotations[config.ANNOTATIONS_PRECISION],
+                            acolor,
+                            annotations[config.ANNOTATIONS_X_OFFSET],
+                            annotations[config.ANNOTATIONS_Y_OFFSET])
+
+        if yerr is None:
+            yerr = [y_vals_main, y_vals_main]
+
+        yerr[1] = [top - main for main, top in zip(y_vals_main, y_vals_top)]
+
+    return yerr
+
 def generate(conf, const_x, ys):
     '''
     y_vals, line_names, eb_mins, eb_maxs, annot_mins, annot_maxes
@@ -113,7 +158,7 @@ def generate(conf, const_x, ys):
     # pylint: disable=too-many-locals,too-many-branches
 
     # pad and unpack config
-    output, lines, axes, annotations, error_bar = pad_config(conf)
+    output, lines, axes, annotations, error_bar, layered_bar = pad_config(conf)
 
     # plot data
     plt.figure(figsize=tuple(output[config.OUTPUT_DIMENSIONS][:2]))
@@ -130,9 +175,10 @@ def generate(conf, const_x, ys):
                        lines[config.LINES_TYPES],
                        lines[config.LINES_MARKERS],
                        annotations[config.ANNOTATIONS_TEXT_COLORS],
-                       error_bar[config.ERROR_BAR_COLORS])
+                       error_bar[config.ERROR_BAR_COLORS],
+                       layered_bar[config.LAYERED_BAR_COLORS])
 
-    for line, color, style, marker, acolor, ecolor in line_configs:
+    for line, color, style, marker, acolor, ecolor, lcolor in line_configs:
         label       = line[0]                           # name of this line
         y_vals      = line[1]                           # collection of values for the current line
         y_vals_main = y_vals[axes[config.AXES_Y_STAT]]  # main points to plot for this line
@@ -145,37 +191,12 @@ def generate(conf, const_x, ys):
                             annotations[config.ANNOTATIONS_X_OFFSET],
                             annotations[config.ANNOTATIONS_Y_OFFSET])
 
-        yerr = None
-
-        # set up bottom error bar
-        if error_bar[config.ERROR_BAR_BOTTOM] is not None:
-            y_vals_bottom = y_vals[error_bar[config.ERROR_BAR_BOTTOM]]
-            if error_bar[config.ERROR_BAR_ANNOTATE]:
-                add_annotations(const_x, y_vals_bottom,
-                                annotations[config.ANNOTATIONS_PRECISION],
-                                acolor,
-                                annotations[config.ANNOTATIONS_X_OFFSET],
-                                annotations[config.ANNOTATIONS_Y_OFFSET])
-
-            if yerr is None:
-                yerr = [y_vals_main, y_vals_main]
-
-            yerr[0] = [main - bottom for main, bottom in zip(y_vals_main, y_vals_bottom)]
-
-        # set up top error bar
-        if error_bar[config.ERROR_BAR_TOP] is not None:
-            y_vals_top = y_vals[error_bar[config.ERROR_BAR_TOP]]
-            if error_bar[config.ERROR_BAR_ANNOTATE]:
-                add_annotations(const_x, y_vals_top,
-                                annotations[config.ANNOTATIONS_PRECISION],
-                                acolor,
-                                annotations[config.ANNOTATIONS_X_OFFSET],
-                                annotations[config.ANNOTATIONS_Y_OFFSET])
-
-            if yerr is None:
-                yerr = [y_vals_main, y_vals_main]
-
-            yerr[1] = [top - main for main, top in zip(y_vals_main, y_vals_top)]
+        # setup main error bar
+        yerr = setup_errorbar(const_x, y_vals, y_vals_main,
+                              error_bar[config.ERROR_BAR_BOTTOM],
+                              error_bar[config.ERROR_BAR_TOP],
+                              error_bar[config.ERROR_BAR_ANNOTATE],
+                              annotations, acolor)
 
         plotline, caps, _ = plt.errorbar(const_x, y_vals_main, label=label,
                                          yerr=yerr,
@@ -186,13 +207,34 @@ def generate(conf, const_x, ys):
                                          capsize=error_bar[config.ERROR_BAR_CAP_SIZE])
 
         # set error bar caps
-        # setting in the errorbar call doesn't seem to work
+        # setting in the error bar call doesn't seem to work
         for cap in caps:
             cap.set_marker('_')
 
         plotline.set_color(color)
         plotline.set_linestyle(style)
         plotline.set_marker(marker)
+
+        # setup layered error bar
+        if layered_bar[config.LAYERED_BAR_BOTTOM] is not None or layered_bar[config.LAYERED_BAR_TOP] is not None:
+            yerr = setup_errorbar(const_x, y_vals, y_vals_main,
+                                  layered_bar[config.LAYERED_BAR_BOTTOM],
+                                  layered_bar[config.LAYERED_BAR_TOP],
+                                  layered_bar[config.LAYERED_BAR_ANNOTATE],
+                                  annotations, acolor)
+
+            plotline, caps, _ = plt.errorbar(const_x, y_vals_main,
+                                             yerr=yerr,
+                                             barsabove=True,
+                                             lolims=(layered_bar[config.LAYERED_BAR_BOTTOM] is None),
+                                             uplims=(layered_bar[config.LAYERED_BAR_TOP] is None),
+                                             ecolor=lcolor,
+                                             capsize=layered_bar[config.LAYERED_BAR_CAP_SIZE])
+
+            # set error bar caps
+            # setting in the errorbar call doesn't seem to work
+            for cap in caps:
+                cap.set_marker('_')
 
     if axes[config.AXES_Y_MIN] is not None:
         plt.ylim(bottom=axes[config.AXES_Y_MIN])

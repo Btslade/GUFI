@@ -158,6 +158,9 @@ Description: Line type/style corresponding to a column's line
 * Data Type: boolean
     * Example: `True`
 
+### [layered_bar]
+This has the same sections and functions the same as [[error_bar]](#error_bar)
+
 ### [annotations]
 
 #### precision
@@ -217,6 +220,13 @@ Below is a full list of all available config key overrides when calling **graph_
 * --error_bar_colors
 * --error_bar_cap_size
 * --error_bar_annotate
+
+### [layered_bar]
+* --layered_bar_bottom
+* --layered_bar_top
+* --layered_bar_colors
+* --layered_bar_cap_size
+* --layered_bar_annotate
 
 ### [annotations]
 * --annotations_precision

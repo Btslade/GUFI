@@ -89,12 +89,23 @@ def lower_quartile(data):
         return float(sorted(data)[int(pos)])
     return float((float(sorted(data)[int(math.floor(pos))]) + float(sorted(data)[int(math.ceil(pos))]))/2)
 
+def interquartile_range(data):
+    return upper_quartile(data) - lower_quartile(data)
+
+def upper_extreme(data):
+    return upper_quartile(data) + (1.5 * interquartile_range(data))
+
+def lower_extreme(data):
+    return lower_quartile(data) - (1.5 * interquartile_range(data))
+
 AVERAGE = 'average'
 MEDIAN  = 'median'
 MINIMUM = 'minimum'
 MAXIMUM = 'maximum'
 UPPER_QUARTILE = 'upper_quartile'
 LOWER_QUARTILE = 'lower_quartile'
+UPPER_EXTREME = 'upper_extreme'
+LOWER_EXTREME = 'lower_extreme'
 
 STATS = {
     AVERAGE        : average,
@@ -103,6 +114,8 @@ STATS = {
     MAXIMUM        : max,
     UPPER_QUARTILE : upper_quartile,
     LOWER_QUARTILE : lower_quartile,
+    UPPER_EXTREME  : upper_extreme,
+    LOWER_EXTREME  : lower_extreme,
 }
 
 def single_commit_stats(columns, rows, stat_names):
@@ -263,12 +276,15 @@ def generate_lines(conf, commits, columns, raw_numbers, verbose):
     # statistic names come from axes and error bar
     axes = conf[performance_pkg.graph.config.AXES]
     error_bar = conf[performance_pkg.graph.config.ERROR_BAR]
+    layered_bar = conf[performance_pkg.graph.config.LAYERED_BAR]
 
     # get unique set of statistics to compute
     stat_names = []
     for stat_name in list({axes[performance_pkg.graph.config.AXES_Y_STAT],
                            error_bar[performance_pkg.graph.config.ERROR_BAR_BOTTOM],
-                           error_bar[performance_pkg.graph.config.ERROR_BAR_TOP]}):
+                           error_bar[performance_pkg.graph.config.ERROR_BAR_TOP],
+                           layered_bar[performance_pkg.graph.config.LAYERED_BAR_BOTTOM],
+                           layered_bar[performance_pkg.graph.config.LAYERED_BAR_TOP]}):
         if stat_name is None:
             continue
 
