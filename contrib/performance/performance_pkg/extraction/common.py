@@ -118,6 +118,8 @@ def cumulative_times_extract(src, commit, branch, db_columns, column_formats):
             continue
 
         line_in_columns = False
+
+        # Ensure line extracted is a known column
         for value in sorted_db_columns:
 
             if value == line[:len(value)]:
@@ -131,6 +133,7 @@ def cumulative_times_extract(src, commit, branch, db_columns, column_formats):
                 data.update(process_line(line, value, 's'))
                 line_in_columns = True
                 break
+
         if not line_in_columns:
             raise ValueError('Unknown column extracted on commit {0}'.format(commit))
 
