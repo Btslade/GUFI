@@ -514,7 +514,7 @@ COLUMN_FORMAT_9 =  [
     ['Real time',                                  float],
 ]
 
-# ordered cumulative times columns (commit a9a1ef7 "update scripts Makefile" -> commit 90611bf "more DRY timestamp printing")
+# ordered cumulative times columns (commit a9a1ef7 "update scripts Makefile" -> 86d3d0e gufi_query updates )
 COLUMN_FORMAT_10 =  [
 
     # from gufi_query
@@ -562,7 +562,7 @@ COLUMN_FORMAT_10 =  [
     ['Real time',                                  float],
 ]
 
-# ordered cumulative times columns (commit a9a1ef7 "update scripts Makefile" -> commit 90611bf "more DRY timestamp printing")
+# ordered cumulative times columns (commit a9a1ef7 "update scripts Makefile" -> commit 86d3d0e "gufi_query updates")
 COLUMN_FORMAT_11 =  [
 
     # from gufi_query

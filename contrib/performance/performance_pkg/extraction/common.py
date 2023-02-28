@@ -135,7 +135,7 @@ def cumulative_times_extract(src, commit, branch, db_columns, column_formats):
                 break
 
         if not line_in_columns:
-            raise ValueError('Unknown column extracted on commit {0}'.format(commit))
+            raise ValueError('Unknown column {0} extracted on commit {1}'.format(line, commit))
 
     # check for missing input
     column_format_match = False
@@ -156,6 +156,6 @@ def cumulative_times_extract(src, commit, branch, db_columns, column_formats):
             column_format_match = True
 
     if not column_format_match:
-        raise ValueError('Cumulative times data matches no known format on commit {0}'.format(commit))
+        raise ValueError('Cumulative times data {0} matches no known format on commit {1}'.format(data, commit))
 
     return data
