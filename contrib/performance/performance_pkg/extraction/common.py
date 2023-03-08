@@ -63,6 +63,14 @@
 
 from performance_pkg import common
 
+class UnknownColumnError(Exception):
+    # Raised When an unknown column occurs
+    pass
+
+class ColumnFormatError(Exception):
+    # Raised when a collection of columns match no known format
+    pass
+
 # common functions used to process multiple debug prints
 
 def create_table(con, table_name, columns):
@@ -95,7 +103,7 @@ def insert(con, parsed, table_name, columns):
     vals = ', '.join(format_value(parsed[col], type) for col, type in columns_format)
     con.execute('INSERT INTO {0} ({1}) VALUES ({2});'.format(table_name, cols, vals))
 
-def cumulative_times_extract(src, commit, branch, db_columns, column_formats):
+def cumulative_times_extract(src, commit, branch, db_columns, column_formats): # pylint: disable=too-many-branches
     # these aren't obtained from running gufi_query
     data = {
         'id'    : None,
@@ -120,22 +128,23 @@ def cumulative_times_extract(src, commit, branch, db_columns, column_formats):
         line_in_columns = False
 
         # Ensure line extracted is a known column
-        for value in sorted_db_columns:
+        for column in sorted_db_columns:
 
-            if value == line[:len(value)]:
-                line = line[len(value):]
-                if line == '':
-                    continue
+            if column == line[:len(column)]:
+                value = line[len(column):]
+                if value == '':
+                    line_in_columns = True
+                    break
 
-                if line[0] == ':':
-                    line = line[1:]
+                if value[0] == ':':
+                    value = value[1:]
 
-                data.update(process_line(line, value, 's'))
+                data.update(process_line(value, column, 's'))
                 line_in_columns = True
                 break
 
         if not line_in_columns:
-            raise ValueError('Unknown column {0} extracted on commit {1}'.format(line, commit))
+            raise UnknownColumnError('Unknown column {0} extracted on commit {1}'.format(line, commit))
 
     # check for missing input
     column_format_match = False
@@ -156,6 +165,6 @@ def cumulative_times_extract(src, commit, branch, db_columns, column_formats):
             column_format_match = True
 
     if not column_format_match:
-        raise ValueError('Cumulative times data {0} matches no known format on commit {1}'.format(data, commit))
+        raise ColumnFormatError('Cumulative times data {0} matches no known format on commit {1}'.format(data, commit))
 
     return data

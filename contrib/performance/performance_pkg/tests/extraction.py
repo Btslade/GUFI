@@ -84,21 +84,18 @@ class TestExtraction(unittest.TestCase):
         for i, (key, type) in enumerate(columns):         # pylint: disable=redefined-builtin
             self.assertEqual(parsed[key], str(type(i)))   # pylint: disable=redefined-builtin
 
+        # an unknown column was added
+        with self.assertRaises(common.UnknownColumnError):
+            module.extract(['This Column does not exist'], None, None)
+
         # did not get enough values
-        with self.assertRaises(ValueError):
+        with self.assertRaises(common.ColumnFormatError):
             module.extract([], None, None)
 
     def test_gufi_query_cumulative_times(self):
-        self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_1)
-        self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_1)
-        self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_2)
-        self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_2)
-        self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_3)
-        self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_3)
-        self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_4)
-        self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_4)
-        self.key_value_test(gq_ct, ':', gq_ct.COLUMN_FORMAT_5)
-        self.key_value_test(gq_ct, '', gq_ct.COLUMN_FORMAT_5)
+        for column_format in gq_ct.COLUMN_FORMATS:
+            self.key_value_test(gq_ct, ':', column_format)
+            self.key_value_test(gq_ct, '', column_format)
 
     def test_gufi_query_cumulative_times_terse(self):
         columns = gq_ctt.COLUMNS[3:]
