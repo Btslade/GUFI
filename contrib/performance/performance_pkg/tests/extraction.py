@@ -72,17 +72,17 @@ class TestExtraction(unittest.TestCase):
     def key_value_test(self, module, seperator, columns):
         # create input
         lines = ['{0}{1} {2}'.format(key, seperator, type(i))
-                 for i, (key, type) in enumerate(columns)] # pylint: disable=redefined-builtin
+                 for i, (key, type) in zip(range(len(columns)), columns.items())] # pylint: disable=redefined-builtin
 
         # parse input
         # prefix empty line and bad line
         # sort lines to change order lines are received
-        parsed = module.extract(['', columns[0][0]] + sorted(lines), None, None)
+        parsed = module.extract(['', list(columns.keys())[0]] + sorted(lines), None, None)
 
         # +3 for id, commit and branch
         self.assertEqual(len(parsed), len(columns) + 3)
-        for i, (key, type) in enumerate(columns):         # pylint: disable=redefined-builtin
-            self.assertEqual(parsed[key], str(type(i)))   # pylint: disable=redefined-builtin
+        for i, (key, type) in zip(range(len(columns)), columns.items()):  # pylint: disable=redefined-builtin
+            self.assertEqual(parsed[key], str(type(i)))                   # pylint: disable=redefined-builtin
 
         # an unknown column was added
         with self.assertRaises(common.UnknownColumnError):
@@ -115,7 +115,8 @@ class TestExtraction(unittest.TestCase):
             gq_ctt.extract([], None, None)
 
     def test_gufi_trace2index_cumulative_times(self):
-        self.key_value_test(gt2i_ct, ':', gt2i_ct.COLUMN_FORMAT_1)
+        for column_format in gt2i_ct.COLUMN_FORMATS:
+            self.key_value_test(gt2i_ct, ':', column_format)
 
 class TestCommon(unittest.TestCase):
     def test(self):

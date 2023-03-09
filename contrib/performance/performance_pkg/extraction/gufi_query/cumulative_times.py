@@ -562,7 +562,7 @@ COLUMNS = {
 }
 
 for column_format in COLUMN_FORMATS:
-    COLUMNS.update(COLUMN_FORMAT)
+    COLUMNS.update(column_format)
 
 def create_table(con):
     common.create_table(con, TABLE_NAME, COLUMNS)

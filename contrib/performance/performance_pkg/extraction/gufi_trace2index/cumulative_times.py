@@ -66,53 +66,52 @@ from performance_pkg.extraction import common
 TABLE_NAME = 'cumulative_times'
 
 # ordered cumulative times columns
-COLUMN_FORMAT_1 = [
-
+COLUMN_FORMATS = [
+    {
     # from gufi_trace2index
-    ['Handle args',                             float],
-    ['memset(work)',                            float],
-    ['Parse directory line',                    float],
-    ['dupdir',                                  float],
-    ['copy_template',                           float],
-    ['opendb',                                  float],
-    ['Zero summary struct',                     float],
-    ['insertdbprep',                            float],
-    ['startdb',                                 float],
-    ['fseek',                                   float],
-    ['Read entries',                            float],
-    ['getline',                                 float],
-    ['memset(entry struct)',                    float],
-    ['Parse entry line',                        float],
-    ['free(entry line)',                        float],
-    ['sumit',                                   float],
-    ['insertdbgo',                              float],
-    ['stopdb',                                  float],
-    ['insertdbfin',                             float],
-    ['insertsumdb',                             float],
-    ['closedb',                                 float],
-    ['cleanup',                                 float],
-    ['Directories created',                       int],
-    ['Files inserted',                            int],
+        'Handle args':                             float,
+        'memset(work)':                            float,
+        'Parse directory line':                    float,
+        'dupdir':                                  float,
+        'copy_template':                           float,
+        'opendb':                                  float,
+        'Zero summary struct':                     float,
+        'insertdbprep':                            float,
+        'startdb':                                 float,
+        'fseek':                                   float,
+        'Read entries':                            float,
+        'getline':                                 float,
+        'memset(entry struct)':                    float,
+        'Parse entry line':                        float,
+        'free(entry line)':                        float,
+        'sumit':                                   float,
+        'insertdbgo':                              float,
+        'stopdb':                                  float,
+        'insertdbfin':                             float,
+        'insertsumdb':                             float,
+        'closedb':                                 float,
+        'cleanup':                                 float,
+        'Directories created':                       int,
+        'Files inserted':                            int,
+    },
 ]
 
-
-COLUMNS_COMBINED = [
+COLUMNS = {
     # not from gufi_query
-    ['id',                                          None],
-    ['commit',                                       str],
-    ['branch',                                       str],
+    'id':                                          None,
+    'commit':                                       str,
+    'branch':                                       str,
 
-] + COLUMN_FORMAT_1
+}
 
-# Remove duplicate entries
-COLUMNS = []
-[COLUMNS.append(column) for column in COLUMNS_COMBINED if column not in COLUMNS] # pylint: disable=(expression-not-assigned)
+for column_format in COLUMN_FORMATS:
+    COLUMNS.update(column_format)
 
 def create_table(con):
     common.create_table(con, TABLE_NAME, COLUMNS)
 
 def extract(src, commit, branch):
-    return common.cumulative_times_extract(src, commit, branch, COLUMNS, [COLUMN_FORMAT_1])
+    return common.cumulative_times_extract(src, commit, branch, COLUMNS, COLUMN_FORMATS)
 
 def insert(con, parsed):
     common.insert(con, parsed, TABLE_NAME, COLUMNS)

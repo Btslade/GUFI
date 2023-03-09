@@ -115,7 +115,7 @@ def cumulative_times_extract(src, commit, branch, db_columns, column_formats): #
     #
     # Column names that are substrings of other column names will be
     # processed last to avoid parsing the longer column name incorrectly
-    sorted_db_columns = [value[0] for value in db_columns]
+    sorted_db_columns = [value for value in db_columns]
     sorted_db_columns.sort(key=len)
     sorted_db_columns.reverse()
 
@@ -158,7 +158,7 @@ def cumulative_times_extract(src, commit, branch, db_columns, column_formats): #
             column_format_match = False
             continue
 
-        for col, _ in column_format:
+        for col in column_format.keys():
             if col not in data:
                 column_format_match = False
                 break
