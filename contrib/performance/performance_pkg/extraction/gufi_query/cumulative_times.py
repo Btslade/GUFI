@@ -65,10 +65,11 @@ from performance_pkg.extraction import common
 
 TABLE_NAME = 'cumulative_times'
 
-# ordered cumulative times columns (Most recent commit -> commit 908c161 "reorganize gufi_query")
+# unordered cumulative times columns
+# from gufi_query
 COLUMN_FORMATS = [
+    # Most recent commit -> commit 908c161 "reorganize gufi_query"
     {
-        # from gufi_query
         'set up globals':                             float,
         'set up intermediate databases':              float,
         'thread pool':                                float,
@@ -114,7 +115,7 @@ COLUMN_FORMATS = [
         'Real time (main)':                           float,
     },
 
-# ORDERED cumulative times columns (commit 8060d30 "split build_and_install function" -> commit 61c0a9d "count queries instead of multiplying")
+    # commit 8060d30 "split build_and_install function" -> commit 61c0a9d "count queries instead of multiplying"
     {
 
         'set up globals':                             float,
@@ -166,7 +167,7 @@ COLUMN_FORMATS = [
         'Real time (main)':                           float,
     },
 
-# ordered cumulative times columns (commit 4164985 "change querydb macro into a function" -> commit 7cd35f8 "xattrprep from Gary")
+    # commit 4164985 "change querydb macro into a function" -> commit 7cd35f8 "xattrprep from Gary"
     {
 
         'set up globals':                             float,
@@ -217,7 +218,7 @@ COLUMN_FORMATS = [
         'Total Thread Time (not including main)':     float,
     },
 
-# ordered cumulative times columns (commit 216ef5b "accidentally added argument to -w flag" -> commit a13a330 "gufi_query does not need a modifydb timer")
+    # commit 216ef5b "accidentally added argument to -w flag" -> commit a13a330 "gufi_query does not need a modifydb timer"
     {
 
         'set up globals':                             float,
@@ -266,7 +267,7 @@ COLUMN_FORMATS = [
         'Total Thread Time (not including main)':     float,
     },
 
-# ordered cumulative times columns (commit 00ba871 "remove --delim option from gufi_find" -> commit 75e2c5b "update tsum to use sqlite3_exec instead of rawquerydb")
+    # commit 00ba871 "remove --delim option from gufi_find" -> commit 75e2c5b "update tsum to use sqlite3_exec instead of rawquerydb"
     {
 
         'set up globals':                             float,
@@ -316,7 +317,7 @@ COLUMN_FORMATS = [
         'Total Thread Time (not including main)':     float,
     },
 
-# ordered cumulative times columns (commit "3235400 also print git branch name"  -> commit 093dc32 "Added total time spent in threads to cumulative times output")
+    # commit "3235400 also print git branch name"  -> commit 093dc32 "Added total time spent in threads to cumulative times output"
     {
 
         'set up globals':                             float,
@@ -364,7 +365,7 @@ COLUMN_FORMATS = [
         'Total Thread Time (not including main)':     float,
     },
 
-# ordered cumulative times columns (97fabf7 dirents not of type d, f, or l are ignored -> commit 941e8ca "use per-executable wrappers around timestamp macros")
+    # 97fabf7 dirents not of type d, f, or l are ignored -> commit 941e8ca "use per-executable wrappers around timestamp macros"
     {
 
         'set up globals':                             float,
@@ -411,7 +412,7 @@ COLUMN_FORMATS = [
         'Real time':                                  float,
     },
 
-# ordered cumulative times columns (commit aad5b08 "use struct start_end instead of individual timespecs")
+    # commit aad5b08 "use struct start_end instead of individual timespecs"
     {
 
         'set up globals':                             float,
@@ -459,7 +460,7 @@ COLUMN_FORMATS = [
         'Real time':                                  float,
     },
 
-# ordered cumulative times columns (commit aaa5b89 "remove travis user in docker" -> commit 90611bf "more DRY timestamp printing")
+    # commit aaa5b89 "remove travis user in docker" -> commit 90611bf "more DRY timestamp printing"
     {
 
         'set up globals':                             float,
@@ -506,7 +507,7 @@ COLUMN_FORMATS = [
         'Real time':                                  float,
     },
 
-# ordered cumulative times columns (commit a9a1ef7 "update scripts Makefile" -> 86d3d0e gufi_query updates )
+    # commit a9a1ef7 "update scripts Makefile" -> 86d3d0e gufi_query updates
     {
 
         'set up globals':                             float,
@@ -555,10 +556,9 @@ COLUMN_FORMATS = [
 
 COLUMNS = {
     # not from gufi_query
-    'id':                                          None,
-    'commit':                                       str,
-    'branch':                                       str,
-
+    'id':                                             None,
+    'commit':                                          str,
+    'branch':                                          str,
 }
 
 for column_format in COLUMN_FORMATS:

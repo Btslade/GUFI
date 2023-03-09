@@ -69,24 +69,26 @@ from performance_pkg.extraction.gufi_query import cumulative_times as gq_ct, cum
 from performance_pkg.extraction.gufi_trace2index import cumulative_times as gt2i_ct
 
 class TestExtraction(unittest.TestCase):
-    def key_value_test(self, module, seperator, columns):
-        # create input
-        lines = ['{0}{1} {2}'.format(key, seperator, type(i))
-                 for i, (key, type) in zip(range(len(columns)), columns.items())] # pylint: disable=redefined-builtin
+    # pylint: disable=redefined-builtin
+    def key_value_test(self, module, separator, columns):
+        # create valid input
+        lines = ['{0}{1} {2}'.format(key, separator, type(i))
+                 for i, (key, type) in enumerate(columns.items())]
 
-        # parse input
-        # prefix empty line and bad line
-        # sort lines to change order lines are received
-        parsed = module.extract(['', list(columns.keys())[0]] + sorted(lines), None, None)
+        # use a known column name as a bad value
+        bad = list(columns.keys())[0]
 
-        # +3 for id, commit and branch
-        self.assertEqual(len(parsed), len(columns) + 3)
-        for i, (key, type) in zip(range(len(columns)), columns.items()):  # pylint: disable=redefined-builtin
-            self.assertEqual(parsed[key], str(type(i)))                   # pylint: disable=redefined-builtin
+        # parse input (no errors despite bad inputs)
+        parsed = module.extract(['',                                     # empty line (ignored)
+                                 bad,                                    # column name only (bad pattern)
+                                 '{0}{1} 2'.format(bad[:-1], separator), # reduced column name (not valid column name, despite substring match)
+                                 '{0} {0}{1} 2'.format(bad, separator),  # extended column name (not valid column name, despite substring match)
+                             ] + sorted(lines),                          # sort lines to change order lines are received
+                                None, None)
 
-        # an unknown column was added
-        with self.assertRaises(common.UnknownColumnError):
-            module.extract(['This Column does not exist'], None, None)
+        self.assertEqual(len(parsed), len(columns) + 3)                  # +3 for id, commit, and branch
+        for i, (key, type) in enumerate(columns.items()):
+            self.assertEqual(parsed[key], str(type(i)))
 
         # did not get enough values
         with self.assertRaises(common.ColumnFormatError):
@@ -95,20 +97,20 @@ class TestExtraction(unittest.TestCase):
     def test_gufi_query_cumulative_times(self):
         for column_format in gq_ct.COLUMN_FORMATS:
             self.key_value_test(gq_ct, ':', column_format)
-            self.key_value_test(gq_ct, '', column_format)
+            self.key_value_test(gq_ct, '',  column_format)
 
     def test_gufi_query_cumulative_times_terse(self):
         columns = gq_ctt.COLUMNS[3:]
 
-        line = ' '.join(str(type(i)) for i, (key, type) in enumerate(columns)) # pylint: disable=redefined-builtin
+        line = ' '.join(str(type(i)) for i, (key, type) in enumerate(columns))
 
         # parse input
         # prefix empty line and bad line
         parsed = gq_ctt.extract(['', ':', line], None, None)
 
         self.assertEqual(len(parsed), len(gq_ctt.COLUMNS))
-        for i, (key, type) in enumerate(columns):       # pylint: disable=redefined-builtin
-            self.assertEqual(parsed[key], str(type(i))) # pylint: disable=redefined-builtin
+        for i, (key, type) in enumerate(columns):
+            self.assertEqual(parsed[key], str(type(i)))
 
         # did not find valid line
         with self.assertRaises(ValueError):
@@ -122,12 +124,14 @@ class TestCommon(unittest.TestCase):
     def test(self):
         table_name = 'table_name'
 
-        columns = [
-            ['None', None],
-            ['str',  str],
-            ['int',  int],
-        ]
+        # known format
+        columns = {
+            'None': None,
+            'str':  str,
+            'int':  int,
+        }
 
+        # read from input
         parsed = {
             'None': None,
             'str' : '',

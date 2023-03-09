@@ -65,10 +65,10 @@ from performance_pkg.extraction import common
 
 TABLE_NAME = 'cumulative_times'
 
-# ordered cumulative times columns
+# unordered cumulative times columns
+# from gufi_trace2index
 COLUMN_FORMATS = [
     {
-    # from gufi_trace2index
         'Handle args':                             float,
         'memset(work)':                            float,
         'Parse directory line':                    float,
@@ -101,7 +101,6 @@ COLUMNS = {
     'id':                                          None,
     'commit':                                       str,
     'branch':                                       str,
-
 }
 
 for column_format in COLUMN_FORMATS:

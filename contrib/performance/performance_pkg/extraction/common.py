@@ -61,25 +61,78 @@
 
 
 
+import re
+
 from performance_pkg import common
 
-class UnknownColumnError(Exception):
-    # Raised When an unknown column occurs
-    pass
+# common functions used to process multiple debug print formats
+# these functions ignore column order
+# "columns" arguments should be dictionaries
 
 class ColumnFormatError(Exception):
     # Raised when a collection of columns match no known format
     pass
 
-# common functions used to process multiple debug prints
-
 def create_table(con, table_name, columns):
     # all column names need to be surrounded by quotation marks, even ones that don't have spaces
-    cols = ', '.join('"{0}" {1}'.format(col, common.TYPE_TO_SQLITE[type]) for col, type in columns)
+    cols = ', '.join('"{0}" {1}'.format(col, common.TYPE_TO_SQLITE[type]) for col, type in columns.items())
     con.execute('CREATE TABLE {0} ({1});'.format(table_name, cols))
 
-def process_line(line, event, rstrip=None):
-    return {event: line.strip().rstrip(rstrip)}
+# <required>, [optional]
+# [whitespace]<column name>[:] <number>[s][whitespace]
+COLUMN_PATTERN = re.compile('^\s*(.+?):? +([\d]+(\.[\d]*)?)s?\s*$') # pylint: disable=anomalous-backslash-in-string
+
+def cumulative_times_extract(src, commit, branch, columns, known_formats):
+    data = {}
+
+    # parse input
+    for line in src:
+        line = line.strip()
+        if line == '':
+            continue
+
+        match = COLUMN_PATTERN.match(line)
+
+        # failed to match
+        if match is None:
+            continue
+
+        col_name = match.group(1)
+
+        # line has correct format, but column
+        # name is not known, so skip
+        if col_name not in columns:
+            continue
+
+        # store valid data
+        data[col_name] = match.group(2)
+
+    # make sure parsed data matches one known format
+    column_format_match = False
+    for known_format in known_formats:
+        if len(data) != len(known_format):
+            continue
+
+        column_format_match = True
+        for col in known_format:
+            if col not in data:
+                column_format_match = False
+                break
+
+        if column_format_match:
+            break
+
+    if not column_format_match:
+        raise ColumnFormatError('Cumulative times data matches no known format on commit {0}'.format(commit))
+
+    # these aren't obtained from running gufi_query
+    data.update({
+        'id'    : None,
+        'commit': commit,
+        'branch': branch,
+    })
+
+    return data
 
 # helper function
 def format_value(value, type): # pylint: disable=redefined-builtin
@@ -90,81 +143,12 @@ def format_value(value, type): # pylint: disable=redefined-builtin
         return '"{0}"'.format(value)
     return str(value)
 
-def get_columns_format(parsed, columns):
-    column_format = []
-    for col_type in columns:
-        if col_type[0] in parsed.keys():
-            column_format.append(col_type)
-    return column_format
-
 def insert(con, parsed, table_name, columns):
-    columns_format = get_columns_format(parsed, columns)
+    # parsed should have data for ALL columns of a particular format,
+    # which is a subset of the union of all column formats
+    columns_format = [[col, type] for col, type, in columns.items() if col in parsed]
+
+    # create SQL statement for inserting with only the found columns
     cols = ', '.join('"{0}"'.format(col) for col, _ in columns_format)
     vals = ', '.join(format_value(parsed[col], type) for col, type in columns_format)
     con.execute('INSERT INTO {0} ({1}) VALUES ({2});'.format(table_name, cols, vals))
-
-def cumulative_times_extract(src, commit, branch, db_columns, column_formats): # pylint: disable=too-many-branches
-    # these aren't obtained from running gufi_query
-    data = {
-        'id'    : None,
-        'commit': commit,
-        'branch': branch,
-    }
-
-    # Organize Column Names longest->shortest
-    #
-    # Column names that are substrings of other column names will be
-    # processed last to avoid parsing the longer column name incorrectly
-    sorted_db_columns = [value for value in db_columns]
-    sorted_db_columns.sort(key=len)
-    sorted_db_columns.reverse()
-
-    # parse input
-    for line in src:
-        line = line.strip()
-        if line == '':
-            continue
-
-        line_in_columns = False
-
-        # Ensure line extracted is a known column
-        for column in sorted_db_columns:
-
-            if column == line[:len(column)]:
-                value = line[len(column):]
-                if value == '':
-                    line_in_columns = True
-                    break
-
-                if value[0] == ':':
-                    value = value[1:]
-
-                data.update(process_line(value, column, 's'))
-                line_in_columns = True
-                break
-
-        if not line_in_columns:
-            raise UnknownColumnError('Unknown column {0} extracted on commit {1}'.format(line, commit))
-
-    # check for missing input
-    column_format_match = False
-    for column_format in column_formats:
-
-        #If match found, break early
-        if column_format_match:
-            break
-
-        if len(column_format) + 3 != len(data):
-            column_format_match = False
-            continue
-
-        for col in column_format.keys():
-            if col not in data:
-                column_format_match = False
-                break
-            column_format_match = True
-
-    if not column_format_match:
-        raise ColumnFormatError('Cumulative times data {0} matches no known format on commit {1}'.format(data, commit))
-
-    return data
