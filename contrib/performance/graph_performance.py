@@ -155,12 +155,6 @@ def gather_raw_numbers(dbname, table_name, columns, commits):
 
     return raw_numbers
 
-def set_hash_len(hash, len): # pylint: disable=redefined-builtin
-    if len > 0:
-        return hash[:len]
-    if len < 0:
-        return hash[len:]
-    return hash
 
 def run(argv):
     # pylint: disable=too-many-locals
@@ -188,7 +182,7 @@ def run(argv):
 
     # modify the commit list to length specified in the config
     hash_len = conf[config.AXES][config.AXES_X_HASH_LEN]
-    commits = [set_hash_len(commit, hash_len)
+    commits = [graph.set_hash_len(commit, hash_len)
                for commit in commits]
 
     # plot stats and save to file

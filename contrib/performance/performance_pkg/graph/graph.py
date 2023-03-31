@@ -61,9 +61,19 @@
 
 
 
+import math
+import subprocess
+
 from matplotlib import pyplot as plt
 
 from performance_pkg.graph import config
+
+def set_hash_len(hash, len): # pylint: disable=redefined-builtin
+    if len > 0:
+        return hash[:len]
+    if len < 0:
+        return hash[len:]
+    return hash
 
 def pad_config(conf):
     '''
@@ -104,16 +114,87 @@ def add_annotations(x_vals, y_vals,
                      textcoords="offset points",
                      xytext=(x_offset, y_offset))
 
+def update_y_vals(y_vals_main, y_vals_bottom, y_vals_top,
+                  full_commit_range, const_x):
+    '''
+    add nan values to y values on commits where no data was collected
+    while preserving values on commits where data was collected
+    '''
+
+    new_y_vals_main = []
+    new_y_vals_bottom = []
+    new_y_vals_top= []
+
+    for commit in full_commit_range:
+
+        if commit in const_x:
+            # append previously defined value
+            new_y_vals_main.append(y_vals_main[const_x.index(commit)])
+            new_y_vals_bottom.append(y_vals_bottom[const_x.index(commit)])
+            new_y_vals_top.append(y_vals_top[const_x.index(commit)])
+
+        else:
+            # append nan values
+            new_y_vals_main.append(math.nan)
+            new_y_vals_bottom.append(math.nan)
+            new_y_vals_top.append(math.nan)
+
+    return new_y_vals_main, new_y_vals_bottom, new_y_vals_top
+
+def set_x_axis(commit_range, axes):
+    '''
+    given a collection of ordered commits, will set each x-tick on a plot to a commit
+    hash written out to the length provided in the axis configuration
+    '''
+
+    tick_position = []
+    for i, commit in enumerate(commit_range):
+        commit_range[i] = set_hash_len(commit, axes[config.AXES_X_HASH_LEN])
+        tick_position.append(i)
+
+    plt.xticks(tick_position, commit_range)
+
+def get_full_commit_range(commit_ranges):
+    '''
+    given an ordered collection of commit ranges, will return an ordered list of
+    all commits that makeup those ranges
+    '''
+
+    # Enviornment variables
+    GIT="@GIT_EXECUTABLE@"
+    CMAKE="@CMAKE_SOURCE_DIR@"
+
+    full_commit_range = []
+    for commit_range in commit_ranges:
+
+        # Execute bash command and parse
+        bash_command = "{0} -C {1} rev-list {2}".format(GIT, CMAKE, commit_range)
+        process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
+        commits, _ = process.communicate()  # pylint: disable=consider-using-with
+        commits = commits.decode().split()
+
+        # Reverse so earliest commits are listed first
+        commits.reverse()
+        full_commit_range += commits
+
+    return full_commit_range
+
 def generate(conf, const_x, ys):
     '''
     y_vals, line_names, eb_mins, eb_maxs, annot_mins, annot_maxes
     should all be lists of lists with the same dimensions
     '''
 
-    # pylint: disable=too-many-locals,too-many-branches
+    # pylint: disable=too-many-locals,too-many-branches,too-many-statements
 
     # pad and unpack config
     output, lines, axes, annotations, error_bar = pad_config(conf)
+
+    # Set non-default x-axis of plot
+    if axes[config.AXES_FULL_X_RANGE]:
+        commit_ranges = conf[config.RAW_DATA][config.RAW_DATA_COMMITS]
+        full_commit_range = get_full_commit_range(commit_ranges)
+        set_x_axis(full_commit_range, axes)
 
     # plot data
     plt.figure(figsize=tuple(output[config.OUTPUT_DIMENSIONS][:2]))
@@ -137,9 +218,23 @@ def generate(conf, const_x, ys):
         y_vals      = line[1]                           # collection of values for the current line
         y_vals_main = y_vals[axes[config.AXES_Y_STAT]]  # main points to plot for this line
 
+        y_vals_bottom = y_vals[error_bar[config.ERROR_BAR_BOTTOM]]
+        y_vals_top = y_vals[error_bar[config.ERROR_BAR_TOP]]
+
+        if axes[config.AXES_FULL_X_RANGE]:
+            y_vals_main, y_vals_bottom, y_vals_top = update_y_vals(y_vals_main,
+                                                                   y_vals_bottom,
+                                                                   y_vals_top,
+                                                                   full_commit_range,
+                                                                   const_x)
+            xs = full_commit_range
+
+        else:
+            xs = const_x
+
         # annotate main points
         if axes[config.AXES_ANNOTATE]:
-            add_annotations(const_x, y_vals_main,
+            add_annotations(xs, y_vals_main,
                             annotations[config.ANNOTATIONS_PRECISION],
                             acolor,
                             annotations[config.ANNOTATIONS_X_OFFSET],
@@ -149,9 +244,8 @@ def generate(conf, const_x, ys):
 
         # set up bottom error bar
         if error_bar[config.ERROR_BAR_BOTTOM] is not None:
-            y_vals_bottom = y_vals[error_bar[config.ERROR_BAR_BOTTOM]]
             if error_bar[config.ERROR_BAR_ANNOTATE]:
-                add_annotations(const_x, y_vals_bottom,
+                add_annotations(xs, y_vals_bottom,
                                 annotations[config.ANNOTATIONS_PRECISION],
                                 acolor,
                                 annotations[config.ANNOTATIONS_X_OFFSET],
@@ -164,9 +258,8 @@ def generate(conf, const_x, ys):
 
         # set up top error bar
         if error_bar[config.ERROR_BAR_TOP] is not None:
-            y_vals_top = y_vals[error_bar[config.ERROR_BAR_TOP]]
             if error_bar[config.ERROR_BAR_ANNOTATE]:
-                add_annotations(const_x, y_vals_top,
+                add_annotations(xs, y_vals_top,
                                 annotations[config.ANNOTATIONS_PRECISION],
                                 acolor,
                                 annotations[config.ANNOTATIONS_X_OFFSET],
@@ -177,7 +270,7 @@ def generate(conf, const_x, ys):
 
             yerr[1] = [top - main for main, top in zip(y_vals_main, y_vals_top)]
 
-        plotline, caps, _ = plt.errorbar(const_x, y_vals_main, label=label,
+        plotline, caps, _ = plt.errorbar(xs, y_vals_main, label=label,
                                          yerr=yerr,
                                          barsabove=True,
                                          lolims=(error_bar[config.ERROR_BAR_BOTTOM] is None),
