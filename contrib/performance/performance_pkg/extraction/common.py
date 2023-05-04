@@ -78,7 +78,7 @@ def create_table(con, table_name, columns):
 # [whitespace]<column name>[:] <number>[s][whitespace]
 COLUMN_PATTERN = re.compile(r'^\s*(.+?):? +(\d+(\.\d*)?)s?\s*$')
 
-def cumulative_times_extract(src, commit, branch, columns, known_formats):
+def cumulative_times_extract(src, commit, branch, timestamp, columns, known_formats):
     data = {}
 
     # parse input
@@ -123,9 +123,10 @@ def cumulative_times_extract(src, commit, branch, columns, known_formats):
 
     # these aren't obtained from running gufi_query
     data.update({
-        'id'    : None,
-        'commit': commit,
-        'branch': branch,
+        'id'       : None,
+        'commit'   : commit,
+        'branch'   : branch,
+        'timestamp': timestamp
     })
 
     return data

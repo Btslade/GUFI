@@ -119,8 +119,10 @@ def run(argv):
     if branch is None:
         branch = common.run_get_stdout(['@GIT_EXECUTABLE@', 'rev-parse', '--abbrev-ref', 'HEAD'])[:-1]
 
+    timestamp = common.run_get_stdout(['@GIT_EXECUTABLE@', "show", "-s", "--format=%ct", commit], '@CMAKE_SOURCE_DIR@')[:-1]
+
     # parse the output
-    parsed = debug_print.extract(sys.stdin, commit, branch)
+    parsed = debug_print.extract(sys.stdin, commit, branch, timestamp)
 
     # insert the parsed data into the raw data database
     if args.raw_data_db is not None:
