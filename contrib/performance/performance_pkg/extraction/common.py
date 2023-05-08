@@ -79,6 +79,7 @@ def create_table(con, table_name, columns):
 COLUMN_PATTERN = re.compile(r'^\s*(.+?):? +(\d+(\.\d*)?)s?\s*$')
 
 def cumulative_times_extract(src, commit, branch, timestamp, columns, known_formats):
+    # pylint: disable=too-many-arguments
     data = {}
 
     # parse input

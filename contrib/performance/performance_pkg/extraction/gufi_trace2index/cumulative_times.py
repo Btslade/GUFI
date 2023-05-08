@@ -98,9 +98,10 @@ COLUMN_FORMATS = [
 
 COLUMNS = {
     # not from gufi_query
-    'id':                                          None,
-    'commit':                                       str,
-    'branch':                                       str,
+    'id'        :                                   None,
+    'commit'    :                                    str,
+    'branch'    :                                    str,
+    'timestamp' :                                    int,
 }
 
 for column_format in COLUMN_FORMATS:
@@ -109,8 +110,8 @@ for column_format in COLUMN_FORMATS:
 def create_table(con):
     common.create_table(con, TABLE_NAME, COLUMNS)
 
-def extract(src, commit, branch):
-    return common.cumulative_times_extract(src, commit, branch, COLUMNS, COLUMN_FORMATS)
+def extract(src, commit, branch, timestamp):
+    return common.cumulative_times_extract(src, commit, branch, timestamp, COLUMNS, COLUMN_FORMATS)
 
 def insert(con, parsed):
     common.insert(con, parsed, TABLE_NAME, COLUMNS)

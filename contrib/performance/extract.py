@@ -119,7 +119,9 @@ def run(argv):
     if branch is None:
         branch = common.run_get_stdout(['@GIT_EXECUTABLE@', 'rev-parse', '--abbrev-ref', 'HEAD'])[:-1]
 
-    timestamp = common.run_get_stdout(['@GIT_EXECUTABLE@', "show", "-s", "--format=%ct", commit], '@CMAKE_SOURCE_DIR@')[:-1]
+    # GUFI show requires a current working directory
+    cwd = '@CMAKE_SOURCE_DIR@'
+    timestamp = common.run_get_stdout(['@GIT_EXECUTABLE@', "show", "-s", "--format=%ct", commit], cwd)[:-1]
 
     # parse the output
     parsed = debug_print.extract(sys.stdin, commit, branch, timestamp)

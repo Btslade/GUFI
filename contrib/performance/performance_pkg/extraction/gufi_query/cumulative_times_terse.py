@@ -118,15 +118,16 @@ COLUMNS = [
     ['Real time (main)',                           float],
 ]
 
-def extract(src, commit, branch): # pylint: disable=function-redefined
+def extract(src, commit, branch, timestamp): # pylint: disable=function-redefined
     # these aren't obtained from running gufi_query
     data = {
-        'id'    : None,
-        'commit': commit,
-        'branch': branch,
+        'id'        : None,
+        'commit'    : commit,
+        'branch'    : branch,
+        'timestamp' : timestamp
     }
 
-    CUMULATIVE_ENTRIES = len(COLUMNS)-3
+    CUMULATIVE_ENTRIES = len(COLUMNS)-4
 
     found = False
 
@@ -140,7 +141,7 @@ def extract(src, commit, branch): # pylint: disable=function-redefined
         if len(numbers) != CUMULATIVE_ENTRIES:
             continue
 
-        data.update({column[0] : num for column, num in zip(COLUMNS[3:], numbers)})
+        data.update({column[0] : num for column, num in zip(COLUMNS[4:], numbers)})
         found = True
         # keep looping even if a line with the correct format has been found
 

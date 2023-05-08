@@ -84,15 +84,15 @@ class TestExtraction(unittest.TestCase):
                                  '{0}{1} 2'.format(bad[:-1], separator), # reduced column name (not valid column name, despite substring match)
                                  '{0} {0}{1} 2'.format(bad, separator),  # extended column name (not valid column name, despite substring match)
                              ] + sorted(lines),                          # sort lines to change order lines are received
-                                None, None)
+                                None, None, None)
 
-        self.assertEqual(len(parsed), len(columns) + 3)                  # +3 for id, commit, and branch
+        self.assertEqual(len(parsed), len(columns) + 4)                  # +4 for id, commit, branch and timestamp
         for i, (key, type) in enumerate(columns.items()):
             self.assertEqual(parsed[key], str(type(i)))
 
         # did not get enough values
         with self.assertRaises(ValueError):
-            module.extract([], None, None)
+            module.extract([], None, None, None)
 
     def test_gufi_query_cumulative_times(self):
         for column_format in gq_ct.COLUMN_FORMATS:
@@ -100,13 +100,13 @@ class TestExtraction(unittest.TestCase):
             self.key_value_test(gq_ct, '',  column_format)
 
     def test_gufi_query_cumulative_times_terse(self):
-        columns = gq_ctt.COLUMNS[3:]
+        columns = gq_ctt.COLUMNS[4:]
 
         line = ' '.join(str(type(i)) for i, (key, type) in enumerate(columns))
 
         # parse input
         # prefix empty line and bad line
-        parsed = gq_ctt.extract(['', ':', line], None, None)
+        parsed = gq_ctt.extract(['', ':', line], None, None, None)
 
         self.assertEqual(len(parsed), len(gq_ctt.COLUMNS))
         for i, (key, type) in enumerate(columns):
@@ -114,7 +114,7 @@ class TestExtraction(unittest.TestCase):
 
         # did not find valid line
         with self.assertRaises(ValueError):
-            gq_ctt.extract([], None, None)
+            gq_ctt.extract([], None, None, None)
 
     def test_gufi_trace2index_cumulative_times(self):
         for column_format in gt2i_ct.COLUMN_FORMATS:
